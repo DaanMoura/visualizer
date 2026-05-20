@@ -28,8 +28,8 @@
 
 ## 5. Verification
 
-- [ ] 5.1 Build the macOS app successfully in Xcode or via `xcodebuild`.
-- [ ] 5.2 Verify the active window has no HUD or diagnostics overlay when permissions are granted.
-- [ ] 5.3 Verify the menu lists the built-in microphone and BlackHole when BlackHole is installed.
-- [ ] 5.4 Verify switching inputs updates visualizer response without restarting the app.
-- [ ] 5.5 Verify disconnecting or removing a selected input falls back gracefully to the default input.
+- [x] 5.1 Build the macOS app successfully in Xcode or via `xcodebuild`.
+- [x] 5.2 Verify the active window has no HUD or diagnostics overlay when permissions are granted.
+- [x] 5.3 Verify the menu lists the built-in microphone and BlackHole when BlackHole is installed.
+- [x] 5.4 Verify switching inputs updates visualizer response without restarting the app.
+- [x] 5.5 Verify disconnecting or removing a selected input falls back gracefully to the default input.
