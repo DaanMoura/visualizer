@@ -25,10 +25,10 @@ To bootstrap the **macOS Sound Visualizer**, we are setting up the core architec
 ### 2. Audio Capture Architecture: Default Input Device Tap with Virtual Loopback Support (Path B)
 - **Choice:** Tap the default system audio input node (`AVAudioInputNode`) using `AVAudioEngine`. Under this model, the visualizer captures whatever device is selected as the system default input.
 - **Rationale:** We compared three paths for audio acquisition:
-  - *Path A (Raw Microphone):* Easy to set up, but captures room/ambient noise.
-  - *Path B (Virtual Loopback Driver Support):* Captures pure digital system output by reading from a virtual input driver (e.g., BlackHole). It uses standard `AVAudioEngine` and standard **Microphone Permissions**, keeping the app lightweight and free from persistent OS screen recording indicators.
-  - *Path C (ScreenCaptureKit):* Captures system audio directly but triggers intrusive **Screen Recording Permissions** and leaves a permanent recording dot in the macOS menu bar, disrupting the minimalist aesthetic.
-  **Path B was chosen** because it achieves 100% pure audio capture with lightweight code and clean privacy states, while naturally allowing users to opt into a free virtual loopback driver (like BlackHole) or fallback to their standard microphone.
+  - *Path A (Raw Microphone):* Easy to set up, but captures room/ambient noise (triggers orange microphone dot).
+  - *Path B (Virtual Loopback Driver Support):* Captures pure digital system output by reading from a virtual input driver (e.g., BlackHole). It uses standard `AVAudioEngine` and standard **Microphone Permissions**, keeping the app lightweight. Note that on macOS Sonoma/Sequoia, capturing from any virtual driver triggers the **purple screen sharing/system audio recording dot** privacy indicator in the menu bar. This is a system-level security feature and cannot be bypassed.
+  - *Path C (ScreenCaptureKit):* Captures system audio directly but triggers intrusive **Screen Recording Permissions** and also triggers the permanent **purple screen sharing dot** in the macOS menu bar, creating similar distraction with higher performance overhead.
+  **Path B remains the best choice** because it achieves 100% pure audio capture with lightweight code, while naturally allowing users to route audio through a virtual loopback driver or fallback to their standard microphone.
 - **Alternative considered:** CoreAudio AudioUnits (more boilerplate) or ScreenCaptureKit (too intrusive / high overhead).
 
 ### 3. DSP: Apple Accelerate Framework (vDSP DFT/FFT)
@@ -48,12 +48,16 @@ To bootstrap the **macOS Sound Visualizer**, we are setting up the core architec
   2. A "hang time" followed by linear/quadratic gravity acceleration descent for the peak indicator dots.
   This replicates the fluid, tactile response of high-end classic physical spectrum visualizers.
 
+### 6. Amplitude Scaling and Sensitivity Calibration: Linear-to-dB Mapping
+- **Choice:** Standard decibel range mapping (`dB = 20.0 * log10(max(amplitude, 1e-5))`) linearly normalized between a configurable minimum floor (e.g., `-65 dB`) and a maximum limit (e.g., `-15 dB`) into a `[0, 1]` scalar range.
+- **Rationale:** Standard digital audio streams at standard listening volumes have extremely low average magnitudes (under `0.005`). A simple `log10(1 + avg * C)` multiplier is highly insensitive, compressing low levels to the bottom (below 5% bar height) and making the visualizer look frozen. Shifting to a standard engineering decibel mapping ensures the bars are highly dynamic, responsive, and animated even during quiet passages or low stream levels.
+
 ## Risks / Trade-offs
 
 - **[Risk] Microphone Permissions Denied:**
   - *Mitigation:* The app will check microphone permissions on start. If denied, it displays a beautiful placeholder view directing the user to Apple System Settings, updating dynamically if permissions are changed.
-- **[Risk] User Onboarding for Virtual Drivers (BlackHole):**
-  - *Mitigation:* If the audio input level is flat or the user is setting up the app, we can provide subtle, elegant text instructions or a README guide pointing them to download/install BlackHole to route their internal audio safely and cleanly.
+- **[Risk] User Onboarding & Silent Routing Issues (BlackHole):**
+  - *Mitigation:* If the routing configuration is incorrect (e.g., Spotify is not outputting to BlackHole, or system input is wrong), the visualizer gets silent buffers. We will mitigate this by adding a **Diagnostics Overlay** to the UI displaying the **active input device name** and the **RMS average input volume in real-time**, making it simple for the user to troubleshoot physical/virtual device routing.
 - **[Risk] Window Resize Render Performance:**
   - *Mitigation:* SwiftUI `Canvas` handles resizing natively and extremely fast. We will avoid dynamic array allocations in the render loop; instead, we will use a pre-allocated array of visualizer models, adjusting only the layout math inside the Canvas block based on the current context bounds.
 - **[Risk] Audio Input Route Changes (e.g., unplugging mic / changing virtual driver settings):**

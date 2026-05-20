@@ -34,3 +34,11 @@
 - [x] 5.3 Document the virtual audio loopback driver setup instructions (e.g., BlackHole) in the README
 - [x] 5.4 Verify building and running the complete visualizer application successfully on macOS
 - [x] 5.5 Validate permission workflow, layout adaptation, and smooth 60+ FPS rendering under load
+
+## 6. Amplitude Sensitivity Calibration & Diagnostics Overlay
+
+- [ ] 6.1 Redesign the frequency scaling formula in `FFTProcessor.swift` using standard engineering decibel mapping (`-65 dB` to `-15 dB`)
+- [ ] 6.2 Add active device name query and real-time RMS input volume calculation to `AudioEngineManager.swift`
+- [ ] 6.3 Implement a toggleable or subtle Diagnostics Overlay in `VisualizerView.swift` showing current device name and RMS audio level
+- [ ] 6.4 Validate sensitive spectrum bar responses using real Spotify digital music streams at low, medium, and high volumes
+- [ ] 6.5 Confirm that active devices and signal levels display correctly in the HUD for streamlined routing troubleshooting
