@@ -1,9 +1,9 @@
 ## 1. Project Setup & Scaffolding
 
-- [ ] 1.1 Create the macOS Swift Xcode project structure in `/Visualizer`
-- [ ] 1.2 Implement the SwiftUI Application Entry Point (`VisualizerApp.swift`)
-- [ ] 1.3 Implement the Main Window styling (resizable, titlebar hidden, custom minimum size)
-- [ ] 1.4 Add Info.plist entries for `NSMicrophoneUsageDescription` to enable audio capture permissions
+- [x] 1.1 Create the macOS Swift Xcode project structure in `/Visualizer`
+- [x] 1.2 Implement the SwiftUI Application Entry Point (`VisualizerApp.swift`)
+- [x] 1.3 Implement the Main Window styling (resizable, titlebar hidden, custom minimum size)
+- [x] 1.4 Add Info.plist entries for `NSMicrophoneUsageDescription` to enable audio capture permissions
 
 ## 2. Audio Capture & Permissions
 
