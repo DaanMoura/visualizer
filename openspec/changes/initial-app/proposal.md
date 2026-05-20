@@ -14,8 +14,8 @@ To bootstrap the Sound Visualizer project, we need an initial, fully-functional 
 
 ### New Capabilities
 - `visualizer-core`: The base Swift/SwiftUI macOS application scaffolding, including window lifecycle, resizability, and user permission handling.
-- `audio-capture-fft`: Audio buffer capture via native `AVAudioEngine` from the active system input (mic/virtual loopback) and FFT frequency analysis via `Accelerate` / `vDSP`.
-- `spectrum-bars-style`: Real-time rendering of a retro-modern "Spectrum Bars" visualizer using SwiftUI Canvas, featuring neon glows, gradients, and smooth spring-based physics decay.
+- `audio-capture-fft`: Audio buffer capture via native `AVAudioEngine` from the active system input (mic/virtual loopback) and FFT frequency analysis via `Accelerate` / `vDSP`. Uses a fixed 2048-sample Hanning-windowed DFT plan (initialised once at startup) to avoid `vDSP_DFT_zop_CreateSetup` failures caused by non-conforming hardware buffer lengths (e.g. 4410 frames at 44.1 kHz). Amplitude normalised across a `-90 dB` to `-10 dB` range to cover real-world microphone and loopback signal levels.
+- `spectrum-bars-style`: Real-time rendering of a retro-modern "Spectrum Bars" visualiser using a native SwiftUI `HStack` + `ForEach` of `SpectrumBar` views. Uses SwiftUI's reactive system (not `Canvas`) to ensure bars re-render on every `@Published` amplitude update, with neon gradients, glow layers, floating peak indicators, and smooth `.animation` transitions.
 
 ### Modified Capabilities
 <!-- None -->

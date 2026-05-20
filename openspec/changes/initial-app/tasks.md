@@ -42,3 +42,14 @@
 - [x] 6.3 Implement a toggleable or subtle Diagnostics Overlay in `VisualizerView.swift` showing current device name and RMS audio level
 - [x] 6.4 Validate sensitive spectrum bar responses using real Spotify digital music streams at low, medium, and high volumes
 - [x] 6.5 Confirm that active devices and signal levels display correctly in the HUD for streamlined routing troubleshooting
+- [x] 6.6 Migrate rendering physics and decay calculations from CVDisplayLink to direct audio tap callbacks to resolve the frozen spectrum bars bug
+
+## 7. Post-Implementation Bug Fixes: Spectrum Bars Not Animating
+
+- [x] 7.1 **[Bug] vDSP DFT setup failing silently for non-conforming buffer lengths**
+  - Root cause: `AVAudioEngine` delivers buffers of **4410 frames** at 44100 Hz (one render slice = ~10 ms). `vDSP_DFT_zop_CreateSetup` requires N = `2^a × 3^b × 5^c`; 4410 = `2 × 3² × 5 × 7²` contains a factor of 7, so setup returned `nil` on every call. Every buffer was silently discarded, returning all-zero bins.
+  - Fix: Initialise the DFT plan **once** in `FFTProcessor.init()` with a fixed `N = 2048` (`2^11` ✓). Each incoming buffer is copied into that fixed window (zero-padded or truncated as needed) before running the transform. This is the industry-standard approach for real-time audio visualisers.
+
+- [x] 7.2 **[Bug] SwiftUI `Canvas` not re-rendering when `@EnvironmentObject` `@Published` values change**
+  - Root cause: `Canvas { context, size in ... }` executes its draw closure outside SwiftUI's state-tracking graph. Accessing `@EnvironmentObject` properties inside the closure does **not** register a dependency, so the canvas never invalidates when `amplitudes` changes.
+  - Fix: Replaced `Canvas`-based renderer with a native `HStack` + `ForEach` of `SpectrumBar` SwiftUI views. SwiftUI's reactive system correctly observes `@EnvironmentObject` changes and invalidates each bar view individually, driving smooth `.animation(.linear(duration:))` transitions on every amplitude update.

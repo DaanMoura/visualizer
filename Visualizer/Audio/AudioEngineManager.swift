@@ -25,23 +25,17 @@ class AudioEngineManager: ObservableObject {
     private let fftProcessor = FFTProcessor()
     
     // Smooth decay values
-    private var targetAmplitudes: [Float] = Array(repeating: 0.0, count: 32)
     private var peakHoldFrames: [Int] = Array(repeating: 0, count: 32)
-    private var displayLink: CVDisplayLink?
     
     private let fftBinCount = 32
     
     init() {
         checkPermission()
         setupNotifications()
-        setupDisplayLink()
     }
     
     deinit {
         stopAudioStream()
-        if let link = displayLink {
-            CVDisplayLinkStop(link)
-        }
     }
     
     func checkPermission() {
@@ -133,9 +127,37 @@ class AudioEngineManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.rmsLevel = rms
-            for i in 0..<min(self.fftBinCount, bins.count) {
-                self.targetAmplitudes[i] = bins[i]
+            
+            let decay: Float = 0.82 // Smooth interpolation decay factor for falling bars
+            let gravity: Float = 0.015 // Gravity pull per frame for peaks
+            let peakHoldLimit = 15 // Frame count before a peak starts to drop
+            
+            var newAmplitudes = self.amplitudes
+            var newPeaks = self.peaks
+            
+            for i in 0..<self.fftBinCount {
+                let target = i < bins.count ? bins[i] : 0.0
+                let current = newAmplitudes[i]
+                
+                let nextValue = current * decay + target * (1.0 - decay)
+                newAmplitudes[i] = max(0.0, min(1.0, nextValue))
+                
+                let currentPeak = newPeaks[i]
+                if newAmplitudes[i] >= currentPeak {
+                    newPeaks[i] = newAmplitudes[i]
+                    self.peakHoldFrames[i] = peakHoldLimit
+                } else {
+                    if self.peakHoldFrames[i] > 0 {
+                        self.peakHoldFrames[i] -= 1
+                    } else {
+                        let nextPeak = currentPeak - gravity
+                        newPeaks[i] = max(newAmplitudes[i], max(0.0, nextPeak))
+                    }
+                }
             }
+            
+            self.amplitudes = newAmplitudes
+            self.peaks = newPeaks
         }
     }
     
@@ -160,62 +182,7 @@ class AudioEngineManager: ObservableObject {
         }
     }
     
-    // CVDisplayLink drive the fluid physics rendering loop at 60 FPS / ProMotion rates
-    private func setupDisplayLink() {
-        var link: CVDisplayLink?
-        let result = CVDisplayLinkCreateWithActiveCGDisplays(&link)
-        
-        guard result == kCVReturnSuccess, let displayLink = link else {
-            print("Failed to create CVDisplayLink.")
-            return
-        }
-        
-        self.displayLink = displayLink
-        
-        let callback: CVDisplayLinkOutputCallback = { _, _, _, _, _, userInfo in
-            let manager = Unmanaged<AudioEngineManager>.fromOpaque(userInfo!).takeUnretainedValue()
-            manager.updateVisuals()
-            return kCVReturnSuccess
-        }
-        
-        CVDisplayLinkSetOutputCallback(displayLink, callback, Unmanaged.passUnretained(self).toOpaque())
-        CVDisplayLinkStart(displayLink)
-    }
-    
-    // This is run inside the display link thread at full screen refresh rates to calculate physics
-    private func updateVisuals() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            
-            let decay: Float = 0.82 // Smooth interpolation decay factor for falling bars
-            let gravity: Float = 0.015 // Gravity pull per frame for peaks
-            let peakHoldLimit = 15 // Frame count before a peak starts to drop
-            
-            for i in 0..<self.fftBinCount {
-                // Exponential decay interpolation for bar heights
-                let current = self.amplitudes[i]
-                let target = self.targetAmplitudes[i]
-                
-                let nextValue = current * decay + target * (1.0 - decay)
-                self.amplitudes[i] = max(0, min(1.0, nextValue))
-                
-                // Peak tracking and physics decay
-                let currentPeak = self.peaks[i]
-                if self.amplitudes[i] >= currentPeak {
-                    self.peaks[i] = self.amplitudes[i]
-                    self.peakHoldFrames[i] = peakHoldLimit
-                } else {
-                    if self.peakHoldFrames[i] > 0 {
-                        self.peakHoldFrames[i] -= 1
-                    } else {
-                        // Peak falls down smoothly under gravity
-                        let nextPeak = currentPeak - gravity
-                        self.peaks[i] = max(self.amplitudes[i], max(0, nextPeak))
-                    }
-                }
-            }
-        }
-    }
+
     
     private func getActiveInputDeviceName() -> String {
         var deviceID = AudioObjectID(0)
