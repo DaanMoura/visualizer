@@ -55,20 +55,21 @@ class FFTProcessor {
         var outputBins = Array(repeating: Float(0.0), count: 32)
         for band in 0..<32 {
             let range = logBinsMap[band]
-            var sum: Float = 0.0
+            var maxVal: Float = 0.0
             for bin in range {
-                sum += magnitudes[bin]
+                if magnitudes[bin] > maxVal {
+                    maxVal = magnitudes[bin]
+                }
             }
-            let avg = range.isEmpty ? 0.0 : sum / Float(range.count)
             
             // Boost factor for high frequency bands which naturally have lower physical sound energy
             let highFreqBoost = 1.0 + Float(band) * 0.18
-            let boostedAvg = avg * highFreqBoost
+            let boostedVal = maxVal * highFreqBoost
             
             // Logarithmic amplitude scaling using standard engineering decibel mapping (-65 dB to -15 dB)
             let minDB: Float = -65.0
             let maxDB: Float = -15.0
-            let db = 20.0 * log10(max(boostedAvg, 1e-5))
+            let db = 20.0 * log10(max(boostedVal, 1e-5))
             let normalized = (db - minDB) / (maxDB - minDB)
             
             outputBins[band] = max(0.0, min(1.0, normalized))
