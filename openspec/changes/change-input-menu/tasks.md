@@ -14,10 +14,10 @@
 
 ## 3. Native macOS Menu
 
-- [ ] 3.1 Add a SwiftUI `Commands` menu in `VisualizerApp.swift` for audio input selection.
-- [ ] 3.2 Render all published input devices as menu commands with a checkmark or selected indicator for the active input.
-- [ ] 3.3 Add a menu refresh command or automatic refresh-on-open behavior using the existing published device list.
-- [ ] 3.4 Ensure selecting BlackHole or another listed input reconfigures capture without restarting the app.
+- [x] 3.1 Add a SwiftUI `Commands` menu in `VisualizerApp.swift` for audio input selection.
+- [x] 3.2 Render all published input devices as menu commands with a checkmark or selected indicator for the active input.
+- [x] 3.3 Add a menu refresh command or automatic refresh-on-open behavior using the existing published device list.
+- [x] 3.4 Ensure selecting BlackHole or another listed input reconfigures capture without restarting the app.
 
 ## 4. Visualizer Surface Cleanup
 
