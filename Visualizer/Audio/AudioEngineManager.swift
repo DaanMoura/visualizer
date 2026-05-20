@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import CoreAudio
+import AudioToolbox
 import Accelerate
 
 class AudioEngineManager: ObservableObject {
@@ -82,22 +83,59 @@ class AudioEngineManager: ObservableObject {
             }
         }
     }
+
+    func selectInputDevice(_ device: InputDevice) {
+        refreshInputDevices()
+
+        let nextDevice = availableInputDevices.first { $0.id == device.id } ?? defaultInputDevice
+        selectedInputDevice = nextDevice
+        updateActiveDevice()
+
+        guard permissionState == .granted else { return }
+
+        let shouldRestart = isEngineRunning || isAudioActive
+        stopAudioStream()
+
+        if shouldRestart || !isAudioActive {
+            startAudioStream()
+        }
+    }
     
     func startAudioStream() {
         guard permissionState == .granted else { return }
         guard !isEngineRunning else { return }
         
         print("Initializing AVAudioEngine capture stream...")
-        updateActiveDevice()
+        refreshInputDevices()
         
         let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.inputFormat(forBus: 0)
+        var captureDevice = selectedInputDevice ?? defaultInputDevice
+
+        if !configureInputDevice(captureDevice) {
+            print("Could not use selected input '\(captureDevice.name)'. Falling back to default input.")
+            captureDevice = defaultInputDevice
+            selectedInputDevice = defaultInputDevice
+            _ = configureInputDevice(defaultInputDevice)
+        }
+
+        var inputFormat = inputNode.inputFormat(forBus: 0)
         
         // Handle potential sample rate error state (e.g. rate is 0 on startup)
+        if inputFormat.sampleRate <= 0, !captureDevice.isDefaultPlaceholder {
+            print("Selected input '\(captureDevice.name)' has an invalid sample rate. Falling back to default input.")
+            captureDevice = defaultInputDevice
+            selectedInputDevice = defaultInputDevice
+            _ = configureInputDevice(defaultInputDevice)
+            inputFormat = inputNode.inputFormat(forBus: 0)
+        }
+
         guard inputFormat.sampleRate > 0 else {
-            print("Error: Input device sample rate is invalid (0). Retrying later...")
+            print("Error: Input device sample rate is invalid (0). Retrying later.")
+            isEngineRunning = false
+            isAudioActive = false
             return
         }
+        updateActiveDevice()
         
         // Remove tap if already installed to prevent crashes
         inputNode.removeTap(onBus: 0)
@@ -114,7 +152,7 @@ class AudioEngineManager: ObservableObject {
             try audioEngine.start()
             isEngineRunning = true
             isAudioActive = true
-            print("AVAudioEngine started successfully. Tapping default input.")
+            print("AVAudioEngine started successfully. Tapping \(activeDeviceName).")
         } catch {
             print("Failed to start AVAudioEngine: \(error.localizedDescription)")
             isEngineRunning = false
@@ -220,6 +258,52 @@ class AudioEngineManager: ObservableObject {
                 self?.updateActiveDevice()
             }
         }
+    }
+
+    private func configureInputDevice(_ device: InputDevice) -> Bool {
+        guard let audioUnit = audioEngine.inputNode.audioUnit else {
+            return device.isDefaultPlaceholder
+        }
+
+        guard var deviceID = device.isDefaultPlaceholder ? defaultInputDeviceID() : Optional(device.id) else {
+            return false
+        }
+
+        let status = AudioUnitSetProperty(
+            audioUnit,
+            kAudioOutputUnitProperty_CurrentDevice,
+            kAudioUnitScope_Global,
+            0,
+            &deviceID,
+            UInt32(MemoryLayout<AudioObjectID>.size)
+        )
+
+        return status == noErr
+    }
+
+    private func defaultInputDeviceID() -> AudioObjectID? {
+        var deviceID = AudioObjectID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &size,
+            &deviceID
+        )
+
+        guard status == noErr, deviceID != AudioObjectID(kAudioObjectUnknown) else {
+            return nil
+        }
+
+        return deviceID
     }
 
     private func enumerateInputDevices() -> [InputDevice] {

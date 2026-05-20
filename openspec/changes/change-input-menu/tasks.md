@@ -7,10 +7,10 @@
 
 ## 2. Capture Reconfiguration
 
-- [ ] 2.1 Add an `selectInputDevice(_:)` API that stores the chosen device and restarts capture when permissions allow.
-- [ ] 2.2 Update audio stream startup to use the selected input device when available and fall back to the system default when needed.
-- [ ] 2.3 Handle selected-device removal or invalid sample-rate states by falling back to the default input without crashing.
-- [ ] 2.4 Preserve FFT/amplitude processing and peak decay behavior across input-device changes.
+- [x] 2.1 Add an `selectInputDevice(_:)` API that stores the chosen device and restarts capture when permissions allow.
+- [x] 2.2 Update audio stream startup to use the selected input device when available and fall back to the system default when needed.
+- [x] 2.3 Handle selected-device removal or invalid sample-rate states by falling back to the default input without crashing.
+- [x] 2.4 Preserve FFT/amplitude processing and peak decay behavior across input-device changes.
 
 ## 3. Native macOS Menu
 
