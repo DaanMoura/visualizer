@@ -41,12 +41,31 @@ This project is built from the ground up to be lightweight, high-performance, an
 - Xcode 15 or later
 - Microphone / Input device permissions (granted on first launch)
 
-### Building
+### Building & Running via Xcode (GUI)
 1. Open the project folder in Xcode by opening `Visualizer/Visualizer.xcodeproj` or running:
    ```bash
    open Visualizer/Visualizer.xcodeproj
    ```
 2. Build and run (⌘R).
+
+### Building & Running via CLI (Command Line)
+To build and run the application directly from your terminal:
+
+1. **Build the App:**
+   Run the following command to compile the visualizer and output the build product into the local `./Build` directory:
+   ```bash
+   xcodebuild -project Visualizer/Visualizer.xcodeproj -scheme Visualizer -configuration Debug -derivedDataPath ./Build
+   ```
+
+2. **Run the App:**
+   - **As a standard window app:**
+     ```bash
+     open ./Build/Build/Products/Debug/Visualizer.app
+     ```
+   - **Directly inside your terminal (to stream real-time capture and device logs):**
+     ```bash
+     ./Build/Build/Products/Debug/Visualizer.app/Contents/MacOS/Visualizer
+     ```
 
 ---
 
