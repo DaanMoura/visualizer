@@ -9,12 +9,23 @@ class AudioEngineManager: ObservableObject {
         case granted
         case denied
     }
+
+    struct InputDevice: Identifiable, Equatable {
+        let id: AudioObjectID
+        let name: String
+
+        var isDefaultPlaceholder: Bool {
+            id == AudioObjectID(kAudioObjectUnknown)
+        }
+    }
     
     @Published var permissionState: PermissionState = .undetermined
     @Published var isAudioActive = false
     
     @Published var activeDeviceName: String = "Default Input"
     @Published var rmsLevel: Float = 0.0
+    @Published private(set) var availableInputDevices: [InputDevice] = []
+    @Published private(set) var selectedInputDevice: InputDevice?
     
     // We publish 32 frequency bands for the Spectrum Bars visualizer
     @Published var amplitudes: [Float] = Array(repeating: 0.0, count: 32)
@@ -23,6 +34,11 @@ class AudioEngineManager: ObservableObject {
     private let audioEngine = AVAudioEngine()
     private var isEngineRunning = false
     private let fftProcessor = FFTProcessor()
+    private let defaultInputDevice = InputDevice(
+        id: AudioObjectID(kAudioObjectUnknown),
+        name: "System Default Input"
+    )
+    private var hardwareDevicesListener: AudioObjectPropertyListenerBlock?
     
     // Smooth decay values
     private var peakHoldFrames: [Int] = Array(repeating: 0, count: 32)
@@ -30,12 +46,14 @@ class AudioEngineManager: ObservableObject {
     private let fftBinCount = 32
     
     init() {
+        refreshInputDevices()
         checkPermission()
         setupNotifications()
     }
     
     deinit {
         stopAudioStream()
+        removeHardwareDeviceListener()
     }
     
     func checkPermission() {
@@ -168,6 +186,7 @@ class AudioEngineManager: ObservableObject {
             name: Notification.Name.AVAudioEngineConfigurationChange,
             object: nil
         )
+        addHardwareDeviceListener()
     }
     
     @objc private func handleRouteChange() {
@@ -175,6 +194,7 @@ class AudioEngineManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             let wasActive = self.isAudioActive
+            self.refreshInputDevices()
             self.stopAudioStream()
             if wasActive {
                 self.startAudioStream()
@@ -183,7 +203,182 @@ class AudioEngineManager: ObservableObject {
     }
     
 
-    
+    func refreshInputDevices() {
+        let devices = enumerateInputDevices()
+        let nextDevices = [defaultInputDevice] + devices
+        let currentSelection = selectedInputDevice ?? defaultInputDevice
+        let nextSelection = nextDevices.first { $0.id == currentSelection.id } ?? defaultInputDevice
+
+        if Thread.isMainThread {
+            availableInputDevices = nextDevices
+            selectedInputDevice = nextSelection
+            updateActiveDevice()
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.availableInputDevices = nextDevices
+                self?.selectedInputDevice = nextSelection
+                self?.updateActiveDevice()
+            }
+        }
+    }
+
+    private func enumerateInputDevices() -> [InputDevice] {
+        var propertySize: UInt32 = 0
+        var devicesAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let sizeStatus = AudioObjectGetPropertyDataSize(
+            AudioObjectID(kAudioObjectSystemObject),
+            &devicesAddress,
+            0,
+            nil,
+            &propertySize
+        )
+
+        guard sizeStatus == noErr, propertySize > 0 else {
+            return []
+        }
+
+        let deviceCount = Int(propertySize) / MemoryLayout<AudioObjectID>.size
+        var deviceIDs = Array(repeating: AudioObjectID(0), count: deviceCount)
+        let deviceStatus = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &devicesAddress,
+            0,
+            nil,
+            &propertySize,
+            &deviceIDs
+        )
+
+        guard deviceStatus == noErr else {
+            return []
+        }
+
+        return deviceIDs
+            .filter { hasInputStreams(deviceID: $0) }
+            .compactMap { deviceID in
+                guard let name = inputDeviceName(for: deviceID) else { return nil }
+                return InputDevice(id: deviceID, name: name)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func hasInputStreams(deviceID: AudioObjectID) -> Bool {
+        var streamConfigAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreamConfiguration,
+            mScope: kAudioDevicePropertyScopeInput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var propertySize: UInt32 = 0
+
+        let sizeStatus = AudioObjectGetPropertyDataSize(
+            deviceID,
+            &streamConfigAddress,
+            0,
+            nil,
+            &propertySize
+        )
+
+        guard sizeStatus == noErr, propertySize > 0 else {
+            return false
+        }
+
+        let bufferListPointer = UnsafeMutableRawPointer.allocate(
+            byteCount: Int(propertySize),
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer {
+            bufferListPointer.deallocate()
+        }
+
+        let dataStatus = AudioObjectGetPropertyData(
+            deviceID,
+            &streamConfigAddress,
+            0,
+            nil,
+            &propertySize,
+            bufferListPointer
+        )
+
+        guard dataStatus == noErr else {
+            return false
+        }
+
+        let bufferList = UnsafeMutableAudioBufferListPointer(
+            bufferListPointer.assumingMemoryBound(to: AudioBufferList.self)
+        )
+        return bufferList.contains { $0.mNumberChannels > 0 }
+    }
+
+    private func inputDeviceName(for deviceID: AudioObjectID) -> String? {
+        var unmanagedName: Unmanaged<CFString>?
+        var propertySize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        var nameAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceNameCFString,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let status = AudioObjectGetPropertyData(
+            deviceID,
+            &nameAddress,
+            0,
+            nil,
+            &propertySize,
+            &unmanagedName
+        )
+
+        guard status == noErr, let unmanagedName else {
+            return nil
+        }
+
+        return unmanagedName.takeUnretainedValue() as String
+    }
+
+    private func addHardwareDeviceListener() {
+        guard hardwareDevicesListener == nil else { return }
+
+        var devicesAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            self?.refreshInputDevices()
+        }
+
+        AudioObjectAddPropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject),
+            &devicesAddress,
+            DispatchQueue.main,
+            listener
+        )
+
+        hardwareDevicesListener = listener
+    }
+
+    private func removeHardwareDeviceListener() {
+        guard let hardwareDevicesListener else { return }
+
+        var devicesAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectRemovePropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject),
+            &devicesAddress,
+            DispatchQueue.main,
+            hardwareDevicesListener
+        )
+
+        self.hardwareDevicesListener = nil
+    }
+
     private func getActiveInputDeviceName() -> String {
         var deviceID = AudioObjectID(0)
         var size = UInt32(MemoryLayout<AudioObjectID>.size)
@@ -206,37 +401,12 @@ class AudioEngineManager: ObservableObject {
             return "Default Input"
         }
         
-        var nameSize = UInt32(0)
-        var nameAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyDeviceNameCFString,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        
-        let statusSize = AudioObjectGetPropertyDataSize(
-            deviceID,
-            &nameAddress,
-            0,
-            nil,
-            &nameSize
-        )
-        
-        guard statusSize == noErr else {
-            return "Default Input"
+        if let selectedInputDevice, !selectedInputDevice.isDefaultPlaceholder {
+            return selectedInputDevice.name
         }
-        
-        var deviceName: CFString? = nil
-        let statusName = AudioObjectGetPropertyData(
-            deviceID,
-            &nameAddress,
-            0,
-            nil,
-            &nameSize,
-            &deviceName
-        )
-        
-        if statusName == noErr, let name = deviceName {
-            return name as String
+
+        if let name = inputDeviceName(for: deviceID) {
+            return name
         }
         
         return "Default Input"

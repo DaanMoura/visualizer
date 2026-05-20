@@ -1,9 +1,9 @@
 ## 1. Audio Device Model & Enumeration
 
-- [ ] 1.1 Add an input-device model to `AudioEngineManager` with stable `AudioObjectID`, display name, and selected-state support.
-- [ ] 1.2 Implement Core Audio enumeration for input-capable devices, including aggregate and loopback devices such as BlackHole.
-- [ ] 1.3 Publish the available input-device list and selected input device for SwiftUI menu rendering.
-- [ ] 1.4 Refresh input devices when `AVAudioEngineConfigurationChange` or Core Audio hardware changes occur.
+- [x] 1.1 Add an input-device model to `AudioEngineManager` with stable `AudioObjectID`, display name, and selected-state support.
+- [x] 1.2 Implement Core Audio enumeration for input-capable devices, including aggregate and loopback devices such as BlackHole.
+- [x] 1.3 Publish the available input-device list and selected input device for SwiftUI menu rendering.
+- [x] 1.4 Refresh input devices when `AVAudioEngineConfigurationChange` or Core Audio hardware changes occur.
 
 ## 2. Capture Reconfiguration
 
