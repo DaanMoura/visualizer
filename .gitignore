@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+Build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.noindex/
+
+# Swift Package Manager
+.build/
+
+# Openspec
+.agent/
+.codex/
+.antigravity/
+.gemini/

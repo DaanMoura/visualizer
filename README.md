@@ -27,11 +27,10 @@ This project is built from the ground up to be lightweight, high-performance, an
 
 ## 📂 Project Structure
 
-*(To be populated as the application components are initialized)*
 - `/Visualizer` - Core Swift Xcode Project / Source files
-- `/Visualizer/Audio` - Audio capture and FFT analysis engine
-- `/Visualizer/Renderers` - Visualizer styles (Bars, Waves, etc.) and graphics logic
-- `/Visualizer/Views` - SwiftUI / Cocoa views and window controller logic
+  - `/Visualizer/Audio` - Audio capture and FFT analysis engine (`AudioEngineManager.swift`, `FFTProcessor.swift`)
+  - `/Visualizer/Views` - SwiftUI views (`VisualizerView.swift`, `SpectrumBarsVisualizer.swift`, `PermissionWarningView.swift`)
+- `/openspec` - Design, proposals, and specifications for the visualizer features
 
 ---
 
@@ -43,13 +42,32 @@ This project is built from the ground up to be lightweight, high-performance, an
 - Microphone / Input device permissions (granted on first launch)
 
 ### Building
-1. Open the project folder in Xcode or Swift Package Manager.
+1. Open the project folder in Xcode by opening `Visualizer/Visualizer.xcodeproj` or running:
+   ```bash
+   open Visualizer/Visualizer.xcodeproj
+   ```
 2. Build and run (⌘R).
-3. Choose your audio input source and start playing sound!
+
+---
+
+## 🔌 Tapping Internal System Audio (Pure Capture)
+
+By default, the app captures audio from your Mac's default input device (physical microphone). To capture **pure, direct system sound** (e.g., from Spotify, Web Browsers, etc.) without background room noise:
+
+1. **Install a Virtual Audio Driver:** Download and install a free virtual audio loopback driver like **BlackHole 2ch** (via Homebrew: `brew install blackhole-2ch` or direct installer).
+2. **Create a Multi-Output Device (Optional but Recommended so you can hear it too!):**
+   - Open **Audio MIDI Setup** on your Mac.
+   - Click the **+** in the bottom left, select **Create Multi-Output Device**.
+   - Check both your physical speakers/headphones AND **BlackHole 2ch**.
+   - Right-click this Multi-Output Device and select **Use This Device For Sound Output**.
+3. **Configure Sound Input:**
+   - Go to **System Settings > Sound > Input**.
+   - Choose **BlackHole 2ch** as your default system input device.
+4. **Launch the Visualizer:** Open the Visualizer app. It will tap into the BlackHole stream and render 100% clean digital audio waveforms!
 
 ---
 
 ## 🎛 Controls
-- **F / Double Click:** Toggle Fullscreen Mode
-- **Space / Left-Right Arrow:** Cycle through visualizer styles
+- **F / Double Click:** Toggle Native Fullscreen Mode
 - **Esc:** Exit fullscreen mode
+
