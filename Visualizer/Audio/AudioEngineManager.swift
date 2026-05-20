@@ -1,5 +1,7 @@
 import Foundation
 import AVFoundation
+import CoreAudio
+import Accelerate
 
 class AudioEngineManager: ObservableObject {
     enum PermissionState {
@@ -10,6 +12,9 @@ class AudioEngineManager: ObservableObject {
     
     @Published var permissionState: PermissionState = .undetermined
     @Published var isAudioActive = false
+    
+    @Published var activeDeviceName: String = "Default Input"
+    @Published var rmsLevel: Float = 0.0
     
     // We publish 32 frequency bands for the Spectrum Bars visualizer
     @Published var amplitudes: [Float] = Array(repeating: 0.0, count: 32)
@@ -71,6 +76,7 @@ class AudioEngineManager: ObservableObject {
         guard !isEngineRunning else { return }
         
         print("Initializing AVAudioEngine capture stream...")
+        updateActiveDevice()
         
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.inputFormat(forBus: 0)
@@ -115,11 +121,18 @@ class AudioEngineManager: ObservableObject {
     }
     
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
+        // Calculate real-time RMS input volume
+        var rms: Float = 0.0
+        if let channelData = buffer.floatChannelData?[0] {
+            vDSP_rmsqv(channelData, 1, &rms, vDSP_Length(buffer.frameLength))
+        }
+        
         // FFT computation is performed in FFTProcessor
         let bins = fftProcessor.process(buffer: buffer)
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+            self.rmsLevel = rms
             for i in 0..<min(self.fftBinCount, bins.count) {
                 self.targetAmplitudes[i] = bins[i]
             }
@@ -201,6 +214,71 @@ class AudioEngineManager: ObservableObject {
                     }
                 }
             }
+        }
+    }
+    
+    private func getActiveInputDeviceName() -> String {
+        var deviceID = AudioObjectID(0)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &size,
+            &deviceID
+        )
+        
+        guard status == noErr else {
+            return "Default Input"
+        }
+        
+        var nameSize = UInt32(0)
+        var nameAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceNameCFString,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        let statusSize = AudioObjectGetPropertyDataSize(
+            deviceID,
+            &nameAddress,
+            0,
+            nil,
+            &nameSize
+        )
+        
+        guard statusSize == noErr else {
+            return "Default Input"
+        }
+        
+        var deviceName: CFString? = nil
+        let statusName = AudioObjectGetPropertyData(
+            deviceID,
+            &nameAddress,
+            0,
+            nil,
+            &nameSize,
+            &deviceName
+        )
+        
+        if statusName == noErr, let name = deviceName {
+            return name as String
+        }
+        
+        return "Default Input"
+    }
+    
+    func updateActiveDevice() {
+        let name = getActiveInputDeviceName()
+        DispatchQueue.main.async { [weak self] in
+            self?.activeDeviceName = name
         }
     }
 }

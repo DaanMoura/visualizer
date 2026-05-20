@@ -107,24 +107,74 @@ struct RequestPermissionView: View {
 
 struct ActiveVisualizerContainer: View {
     @EnvironmentObject var audioEngine: AudioEngineManager
+    @State private var showDiagnostics = false
     
     var body: some View {
         VStack(spacing: 0) {
             // Top HUD Overlay
-            HStack {
-                Circle()
-                    .fill(audioEngine.isAudioActive ? Color.green : Color.red)
-                    .frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(audioEngine.isAudioActive ? Color.green : Color.red)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(audioEngine.isAudioActive ? "LIVE" : "OFFLINE")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(audioEngine.isAudioActive ? .green.opacity(0.8) : .red.opacity(0.8))
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            showDiagnostics.toggle()
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Text(showDiagnostics ? "Click 'LIVE' to hide diagnostics | F: Fullscreen" : "Click 'LIVE' for diagnostics | F: Fullscreen")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.3))
+                }
                 
-                Text(audioEngine.isAudioActive ? "LIVE: Capture Default Device" : "OFFLINE")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundColor(audioEngine.isAudioActive ? .green.opacity(0.8) : .red.opacity(0.8))
-                
-                Spacer()
-                
-                Text("Double Click / F: Fullscreen")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.3))
+                if showDiagnostics && audioEngine.isAudioActive {
+                    HStack(spacing: 12) {
+                        Text("Device: \(audioEngine.activeDeviceName)")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        Spacer()
+                        
+                        HStack(spacing: 6) {
+                            Text("Signal:")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(width: 50, height: 4)
+                                
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.cyan, .purple],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: 50 * CGFloat(min(1.0, max(0.0, audioEngine.rmsLevel * 10.0))), height: 4)
+                            }
+                            
+                            let dbVal = audioEngine.rmsLevel > 1e-5 ? 20.0 * log10(audioEngine.rmsLevel) : -100.0
+                            Text(String(format: "%.1f dB", dbVal))
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundColor(audioEngine.rmsLevel > 0.001 ? .green.opacity(0.8) : .white.opacity(0.3))
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .padding(.top, 4)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)

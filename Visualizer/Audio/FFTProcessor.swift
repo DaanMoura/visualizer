@@ -63,10 +63,15 @@ class FFTProcessor {
             
             // Boost factor for high frequency bands which naturally have lower physical sound energy
             let highFreqBoost = 1.0 + Float(band) * 0.18
+            let boostedAvg = avg * highFreqBoost
             
-            // Logarithmic amplitude scaling (decibel-style visual representation)
-            let dbScaled = log10(1.0 + avg * 120.0) * highFreqBoost
-            outputBins[band] = max(0.0, min(1.0, dbScaled))
+            // Logarithmic amplitude scaling using standard engineering decibel mapping (-65 dB to -15 dB)
+            let minDB: Float = -65.0
+            let maxDB: Float = -15.0
+            let db = 20.0 * log10(max(boostedAvg, 1e-5))
+            let normalized = (db - minDB) / (maxDB - minDB)
+            
+            outputBins[band] = max(0.0, min(1.0, normalized))
         }
         
         return outputBins

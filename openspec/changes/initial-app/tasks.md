@@ -37,8 +37,8 @@
 
 ## 6. Amplitude Sensitivity Calibration & Diagnostics Overlay
 
-- [ ] 6.1 Redesign the frequency scaling formula in `FFTProcessor.swift` using standard engineering decibel mapping (`-65 dB` to `-15 dB`)
-- [ ] 6.2 Add active device name query and real-time RMS input volume calculation to `AudioEngineManager.swift`
-- [ ] 6.3 Implement a toggleable or subtle Diagnostics Overlay in `VisualizerView.swift` showing current device name and RMS audio level
-- [ ] 6.4 Validate sensitive spectrum bar responses using real Spotify digital music streams at low, medium, and high volumes
-- [ ] 6.5 Confirm that active devices and signal levels display correctly in the HUD for streamlined routing troubleshooting
+- [x] 6.1 Redesign the frequency scaling formula in `FFTProcessor.swift` using standard engineering decibel mapping (`-65 dB` to `-15 dB`)
+- [x] 6.2 Add active device name query and real-time RMS input volume calculation to `AudioEngineManager.swift`
+- [x] 6.3 Implement a toggleable or subtle Diagnostics Overlay in `VisualizerView.swift` showing current device name and RMS audio level
+- [x] 6.4 Validate sensitive spectrum bar responses using real Spotify digital music streams at low, medium, and high volumes
+- [x] 6.5 Confirm that active devices and signal levels display correctly in the HUD for streamlined routing troubleshooting
