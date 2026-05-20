@@ -21,10 +21,10 @@
 
 ## 4. Visualizer Surface Cleanup
 
-- [ ] 4.1 Remove the active-state HUD, live/offline indicator, diagnostics toggle, device label, RMS meter, and helper text from `ActiveVisualizerContainer`.
-- [ ] 4.2 Keep the permission request and permission denied screens available before audio access is granted.
-- [ ] 4.3 Ensure the active visualizer window renders only `SpectrumBarsVisualizer` while preserving double-click fullscreen support.
-- [ ] 4.4 Keep the `F` keyboard shortcut behavior unchanged after removing the HUD.
+- [x] 4.1 Remove the active-state HUD, live/offline indicator, diagnostics toggle, device label, RMS meter, and helper text from `ActiveVisualizerContainer`.
+- [x] 4.2 Keep the permission request and permission denied screens available before audio access is granted.
+- [x] 4.3 Ensure the active visualizer window renders only `SpectrumBarsVisualizer` while preserving double-click fullscreen support.
+- [x] 4.4 Keep the `F` keyboard shortcut behavior unchanged after removing the HUD.
 
 ## 5. Verification
 
