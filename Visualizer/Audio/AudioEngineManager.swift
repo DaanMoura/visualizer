@@ -22,6 +22,15 @@ class AudioEngineManager: NSObject, ObservableObject {
         var id: String { rawValue }
     }
 
+    enum VisualizerStyle: String, CaseIterable, Identifiable {
+        case spectrumBars = "Spectrum Bars"
+        case oscilloscope = "Oscilloscope"
+        case frequencyVortex = "Frequency Vortex"
+        case metalParticles = "Neon Particle Vortex"
+        
+        var id: String { rawValue }
+    }
+
     struct InputDevice: Identifiable, Equatable {
         let id: AudioObjectID
         let name: String
@@ -44,6 +53,9 @@ class AudioEngineManager: NSObject, ObservableObject {
     // We publish 32 frequency bands for the Spectrum Bars visualizer
     @Published var amplitudes: [Float] = Array(repeating: 0.0, count: 32)
     @Published var peaks: [Float] = Array(repeating: 0.0, count: 32)
+    
+    @Published var currentStyle: VisualizerStyle = .spectrumBars
+    @Published var rawSamples: [Float] = Array(repeating: 0.0, count: 512)
     
     private var audioEngine: AVAudioEngine?
     private var isEngineRunning = false
@@ -176,6 +188,20 @@ class AudioEngineManager: NSObject, ObservableObject {
                 self.startAudioStream()
             }
         }
+    }
+
+    func nextStyle() {
+        let allStyles = VisualizerStyle.allCases
+        guard let currentIndex = allStyles.firstIndex(of: currentStyle) else { return }
+        let nextIndex = (currentIndex + 1) % allStyles.count
+        currentStyle = allStyles[nextIndex]
+    }
+    
+    func previousStyle() {
+        let allStyles = VisualizerStyle.allCases
+        guard let currentIndex = allStyles.firstIndex(of: currentStyle) else { return }
+        let prevIndex = (currentIndex - 1 + allStyles.count) % allStyles.count
+        currentStyle = allStyles[prevIndex]
     }
 
     func selectInputDevice(_ device: InputDevice) {
@@ -376,12 +402,31 @@ class AudioEngineManager: NSObject, ObservableObject {
             vDSP_rmsqv(channelData, 1, &rms, vDSP_Length(buffer.frameLength))
         }
         
+        // Downsample PCM buffer for Oscilloscope (exactly 512 samples)
+        var samples: [Float] = []
+        if let channelData = buffer.floatChannelData?[0] {
+            let frameCount = Int(buffer.frameLength)
+            let step = max(1, frameCount / 512)
+            for i in stride(from: 0, to: min(frameCount, step * 512), by: step) {
+                samples.append(channelData[i])
+            }
+            while samples.count < 512 {
+                samples.append(0.0)
+            }
+            if samples.count > 512 {
+                samples = Array(samples.prefix(512))
+            }
+        } else {
+            samples = Array(repeating: 0.0, count: 512)
+        }
+        
         // FFT computation is performed in FFTProcessor
         let bins = fftProcessor.process(buffer: buffer)
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.rmsLevel = rms
+            self.rawSamples = samples
             
             let decay: Float = 0.82 // Smooth interpolation decay factor for falling bars
             let gravity: Float = 0.015 // Gravity pull per frame for peaks

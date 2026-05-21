@@ -1,10 +1,10 @@
 ## 1. Audio Engine Extensions
 
-- [ ] 1.1 Define `VisualizerStyle` enum with cases for `spectrumBars`, `oscilloscope`, `frequencyVortex`, and `metalParticles`
-- [ ] 1.2 Add `@Published var currentStyle: VisualizerStyle` to `AudioEngineManager`
-- [ ] 1.3 Add `@Published var rawSamples: [Float]` of 512 elements to `AudioEngineManager`
-- [ ] 1.4 Implement `nextStyle()` and `previousStyle()` helper methods in `AudioEngineManager`
-- [ ] 1.5 Update `processAudioBuffer(_:)` to extract and downsample time-domain PCM float buffer samples into `rawSamples`
+- [x] 1.1 Define `VisualizerStyle` enum with cases for `spectrumBars`, `oscilloscope`, `frequencyVortex`, and `metalParticles`
+- [x] 1.2 Add `@Published var currentStyle: VisualizerStyle` to `AudioEngineManager`
+- [x] 1.3 Add `@Published var rawSamples: [Float]` of 512 elements to `AudioEngineManager`
+- [x] 1.4 Implement `nextStyle()` and `previousStyle()` helper methods in `AudioEngineManager`
+- [x] 1.5 Update `processAudioBuffer(_:)` to extract and downsample time-domain PCM float buffer samples into `rawSamples`
 
 ## 2. New Renderer Implementations
 
