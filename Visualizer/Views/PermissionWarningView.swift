@@ -1,19 +1,23 @@
 import SwiftUI
 
 struct PermissionWarningView: View {
+    let source: AudioEngineManager.CaptureSource
+    
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 64))
-                .foregroundColor(.orange)
-                .shadow(color: .orange.opacity(0.4), radius: 8)
+                .foregroundColor(source == .microphone ? .orange : .purple)
+                .shadow(color: (source == .microphone ? Color.orange : Color.purple).opacity(0.4), radius: 8)
             
             VStack(spacing: 8) {
-                Text("Microphone Permission Required")
+                Text(source == .microphone ? "Microphone Permission Required" : "Screen Recording Permission Required")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
-                Text("Sound Visualizer needs access to your default audio input device to analyze audio and render graphs.")
+                Text(source == .microphone 
+                     ? "Sound Visualizer needs access to your default audio input device to analyze audio and render graphs."
+                     : "Sound Visualizer needs screen recording/capture access to grab system speaker output for analysis.")
                     .font(.system(size: 13))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -34,7 +38,9 @@ struct PermissionWarningView: View {
                     Text("2.")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.cyan)
-                    Text("Navigate to **Privacy & Security** > **Microphone**.")
+                    Text(source == .microphone 
+                         ? "Navigate to **Privacy & Security** > **Microphone**."
+                         : "Navigate to **Privacy & Security** > **Screen & System Audio Recording**.")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.9))
                 }
@@ -63,7 +69,7 @@ struct PermissionWarningView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.orange)
+                            .fill(source == .microphone ? Color.orange : Color.purple)
                     )
             }
             .buttonStyle(.plain)
@@ -72,7 +78,8 @@ struct PermissionWarningView: View {
     }
     
     private func openSystemSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+        let path = source == .microphone ? "Privacy_Microphone" : "Privacy_ScreenCapture"
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(path)") {
             NSWorkspace.shared.open(url)
         } else if let url = URL(string: "x-apple.systempreferences:") {
             NSWorkspace.shared.open(url)

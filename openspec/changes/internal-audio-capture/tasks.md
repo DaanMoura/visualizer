@@ -13,10 +13,10 @@
 
 ## 3. Dynamic Permissions & Onboarding UI
 
-- [ ] 3.1 Implement a `CGPreflightScreenCaptureAccess` permission check helper in `AudioEngineManager`.
-- [ ] 3.2 Add a new published permission state for screen recording (undetermined, granted, denied).
-- [ ] 3.3 Update `PermissionWarningView.swift` to support displaying a "Screen Recording Permission" guide alongside the existing "Microphone Permission" guide.
-- [ ] 3.4 Update the permission validation branch in `VisualizerView.swift` to display the appropriate permission warning depending on the selected source.
+- [x] 3.1 Implement a `CGPreflightScreenCaptureAccess` permission check helper in `AudioEngineManager`.
+- [x] 3.2 Add a new published permission state for screen recording (undetermined, granted, denied).
+- [x] 3.3 Update `PermissionWarningView.swift` to support displaying a "Screen Recording Permission" guide alongside the existing "Microphone Permission" guide.
+- [x] 3.4 Update the permission validation branch in `VisualizerView.swift` to display the appropriate permission warning depending on the selected source.
 
 ## 4. UI Menu Source Selection
 

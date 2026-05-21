@@ -7,13 +7,24 @@ struct VisualizerView: View {
 
     var body: some View {
         Group {
-            switch audioEngine.permissionState {
-            case .undetermined:
-                RequestPermissionView()
-            case .denied:
-                PermissionWarningView()
-            case .granted:
-                ActiveVisualizerContainer()
+            if audioEngine.captureSource == .microphone {
+                switch audioEngine.permissionState {
+                case .undetermined:
+                    RequestPermissionView(source: .microphone)
+                case .denied:
+                    PermissionWarningView(source: .microphone)
+                case .granted:
+                    ActiveVisualizerContainer()
+                }
+            } else {
+                switch audioEngine.screenCapturePermissionState {
+                case .undetermined:
+                    RequestPermissionView(source: .systemAudio)
+                case .denied:
+                    PermissionWarningView(source: .systemAudio)
+                case .granted:
+                    ActiveVisualizerContainer()
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -56,25 +67,28 @@ struct VisualizerView: View {
 
 struct RequestPermissionView: View {
     @EnvironmentObject var audioEngine: AudioEngineManager
+    let source: AudioEngineManager.CaptureSource
 
     var body: some View {
         VStack(spacing: 24) {
-            Image(systemName: "waveform.circle.fill")
+            Image(systemName: source == .microphone ? "waveform.circle.fill" : "desktopcomputer")
                 .font(.system(size: 64))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.cyan, .purple],
+                        colors: source == .microphone ? [.cyan, .purple] : [.orange, .pink],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
 
             VStack(spacing: 8) {
-                Text("Sound Visualizer")
+                Text(source == .microphone ? "Sound Visualizer" : "System Audio Capture")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("To visualize your sound in real-time, please grant microphone/input permissions.")
+                Text(source == .microphone 
+                     ? "To visualize your sound in real-time, please grant microphone/input permissions."
+                     : "To visualize your system's speaker output natively, please grant screen capture permissions.")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -82,21 +96,31 @@ struct RequestPermissionView: View {
             }
 
             Button(action: {
-                audioEngine.requestPermission()
+                if source == .microphone {
+                    audioEngine.requestPermission()
+                } else {
+                    audioEngine.requestScreenCapturePermission()
+                }
             }) {
-                Text("Grant Permission")
+                Text(source == .microphone ? "Grant Permission" : "Grant System Audio Permission")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(LinearGradient(colors: [.blue, .cyan], startPoint: .leading, endPoint: .trailing))
+                            .fill(LinearGradient(
+                                colors: source == .microphone ? [.blue, .cyan] : [.purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ))
                     )
             }
             .buttonStyle(.plain)
 
-            Text("Tip: Install a loopback driver like BlackHole to visualize pure internal computer sound.")
+            Text(source == .microphone 
+                 ? "Tip: Install a loopback driver like BlackHole to visualize pure internal computer sound."
+                 : "Tip: ScreenCaptureKit requires Screen Recording permission to tap speaker output. No video is recorded or stored.")
                 .font(.system(size: 11))
                 .foregroundColor(.darkGray)
                 .multilineTextAlignment(.center)

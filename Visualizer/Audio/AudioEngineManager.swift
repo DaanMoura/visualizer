@@ -112,11 +112,17 @@ class AudioEngineManager: NSObject, ObservableObject {
         if CGPreflightScreenCaptureAccess() {
             screenCapturePermissionState = .granted
         } else {
-            screenCapturePermissionState = .denied
+            let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")
+            if hasRequested {
+                screenCapturePermissionState = .denied
+            } else {
+                screenCapturePermissionState = .undetermined
+            }
         }
     }
     
     func requestScreenCapturePermission() {
+        UserDefaults.standard.set(true, forKey: "hasRequestedScreenCapture")
         _ = CGRequestScreenCaptureAccess()
         
         // Dynamic recheck after triggering the request
