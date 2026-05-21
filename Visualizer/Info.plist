@@ -22,6 +22,10 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires microphone or audio input access to analyze and render real-time sound visualizations.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>This app requires access to system audio to visualize pure internal computer sound output in real-time.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>This app requires screen recording/system audio capture permission to analyze system audio output in real-time.</string>
 	<key>LSUIElement</key>
 	<false/>
 </dict>

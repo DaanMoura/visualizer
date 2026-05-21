@@ -31,7 +31,7 @@ class AudioEngineManager: NSObject, ObservableObject {
     
     @Published var permissionState: PermissionState = .undetermined
     @Published var screenCapturePermissionState: PermissionState = .undetermined
-    @Published var captureSource: CaptureSource = .microphone
+    @Published var captureSource: CaptureSource = .systemAudio
     @Published var isAudioActive = false
     
     @Published var activeDeviceName: String = "Default Input"
@@ -43,7 +43,7 @@ class AudioEngineManager: NSObject, ObservableObject {
     @Published var amplitudes: [Float] = Array(repeating: 0.0, count: 32)
     @Published var peaks: [Float] = Array(repeating: 0.0, count: 32)
     
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine: AVAudioEngine?
     private var isEngineRunning = false
     private let fftProcessor = FFTProcessor()
     private let defaultInputDevice = InputDevice(
@@ -63,6 +63,15 @@ class AudioEngineManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
+        
+        // Restore persisted capture source, defaulting to .systemAudio
+        if let savedSourceRaw = UserDefaults.standard.string(forKey: "selectedCaptureSource"),
+           let savedSource = CaptureSource(rawValue: savedSourceRaw) {
+            self.captureSource = savedSource
+        } else {
+            self.captureSource = .systemAudio
+        }
+        
         refreshInputDevices()
         checkPermission()
         setupNotifications()
@@ -111,12 +120,33 @@ class AudioEngineManager: NSObject, ObservableObject {
     func checkScreenCapturePermission() {
         if CGPreflightScreenCaptureAccess() {
             screenCapturePermissionState = .granted
-        } else {
-            let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")
-            if hasRequested {
-                screenCapturePermissionState = .denied
-            } else {
-                screenCapturePermissionState = .undetermined
+            return
+        }
+        
+        // Fallback for macOS 14.4+ "System Audio Recording Only" permission.
+        // CGPreflightScreenCaptureAccess() returns false if only system audio capture is permitted.
+        // Attempting to query shareable content acts as an async permission preflight check.
+        Task {
+            do {
+                _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    print("System audio capture permission verified via SCShareableContent fallback.")
+                    self.screenCapturePermissionState = .granted
+                    if self.captureSource == .systemAudio {
+                        self.startAudioStream()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")
+                    if hasRequested {
+                        self.screenCapturePermissionState = .denied
+                    } else {
+                        self.screenCapturePermissionState = .undetermined
+                    }
+                }
             }
         }
     }
@@ -153,6 +183,9 @@ class AudioEngineManager: NSObject, ObservableObject {
             self.stopAudioStream()
             self.captureSource = source
             
+            // Persist the selection
+            UserDefaults.standard.set(source.rawValue, forKey: "selectedCaptureSource")
+            
             self.checkPermission()
             
             if self.hasPermission(for: source) {
@@ -170,8 +203,10 @@ class AudioEngineManager: NSObject, ObservableObject {
         // Auto switch back to microphone if they select a device
         if captureSource != .microphone {
             captureSource = .microphone
+            UserDefaults.standard.set(CaptureSource.microphone.rawValue, forKey: "selectedCaptureSource")
             checkPermission()
         } else {
+            UserDefaults.standard.set(CaptureSource.microphone.rawValue, forKey: "selectedCaptureSource")
             updateActiveDevice()
         }
 
@@ -208,7 +243,9 @@ class AudioEngineManager: NSObject, ObservableObject {
         print("Initializing AVAudioEngine capture stream...")
         refreshInputDevices()
         
-        let inputNode = audioEngine.inputNode
+        let engine = AVAudioEngine()
+        audioEngine = engine
+        let inputNode = engine.inputNode
         var captureDevice = selectedInputDevice ?? defaultInputDevice
 
         if !configureInputDevice(captureDevice) {
@@ -233,6 +270,7 @@ class AudioEngineManager: NSObject, ObservableObject {
             print("Error: Input device sample rate is invalid (0). Retrying later.")
             isEngineRunning = false
             isAudioActive = false
+            audioEngine = nil
             return
         }
         updateActiveDevice()
@@ -246,28 +284,35 @@ class AudioEngineManager: NSObject, ObservableObject {
             self?.processAudioBuffer(buffer)
         }
         
-        audioEngine.prepare()
+        engine.prepare()
         
         do {
-            try audioEngine.start()
+            try engine.start()
             isEngineRunning = true
             isAudioActive = true
             print("AVAudioEngine started successfully. Tapping \(activeDeviceName).")
         } catch {
             print("Failed to start AVAudioEngine: \(error.localizedDescription)")
+            inputNode.removeTap(onBus: 0)
             isEngineRunning = false
             isAudioActive = false
+            audioEngine = nil
         }
     }
     
     private func stopMicrophoneStream() {
-        guard isEngineRunning else { return }
+        guard isEngineRunning || audioEngine != nil else { return }
         
-        audioEngine.inputNode.removeTap(onBus: 0)
-        audioEngine.stop()
+        if let engine = audioEngine {
+            engine.inputNode.removeTap(onBus: 0)
+            if engine.isRunning {
+                engine.stop()
+            }
+            audioEngine = nil
+        }
         isEngineRunning = false
         isAudioActive = false
-        print("AVAudioEngine stopped.")
+        print("AVAudioEngine stopped and deallocated.")
     }
     
     private func startSystemAudioStream() {
@@ -314,6 +359,7 @@ class AudioEngineManager: NSObject, ObservableObject {
                 print("Failed to start ScreenCaptureKit audio stream: \(error.localizedDescription)")
                 self.isSCStreamRunning = false
                 self.isAudioActive = false
+                self.screenCapturePermissionState = .denied
             }
         }
     }
@@ -430,7 +476,7 @@ class AudioEngineManager: NSObject, ObservableObject {
     }
 
     private func configureInputDevice(_ device: InputDevice) -> Bool {
-        guard let audioUnit = audioEngine.inputNode.audioUnit else {
+        guard let engine = audioEngine, let audioUnit = engine.inputNode.audioUnit else {
             return device.isDefaultPlaceholder
         }
 
