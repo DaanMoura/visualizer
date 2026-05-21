@@ -13,6 +13,9 @@
 		110000042C12345600000001 /* VisualizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000042C12345600000002 /* VisualizerView.swift */; };
 		110000052C12345600000001 /* SpectrumBarsVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000052C12345600000002 /* SpectrumBarsVisualizer.swift */; };
 		110000062C12345600000001 /* PermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000062C12345600000002 /* PermissionWarningView.swift */; };
+		110000212C12345600000001 /* OscilloscopeVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000212C12345600000002 /* OscilloscopeVisualizer.swift */; };
+		110000222C12345600000001 /* FrequencyVortexVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000222C12345600000002 /* FrequencyVortexVisualizer.swift */; };
+		110000242C12345600000001 /* MetalParticleVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000242C12345600000002 /* MetalParticleVisualizer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,10 @@
 		110000062C12345600000002 /* PermissionWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionWarningView.swift; sourceTree = "<group>"; };
 		110000072C12345600000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		110000082C12345600000002 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		110000212C12345600000002 /* OscilloscopeVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OscilloscopeVisualizer.swift; sourceTree = "<group>"; };
+		110000222C12345600000002 /* FrequencyVortexVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyVortexVisualizer.swift; sourceTree = "<group>"; };
+		110000232C12345600000002 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		110000242C12345600000002 /* MetalParticleVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalParticleVisualizer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +79,10 @@
 				110000042C12345600000002 /* VisualizerView.swift */,
 				110000052C12345600000002 /* SpectrumBarsVisualizer.swift */,
 				110000062C12345600000002 /* PermissionWarningView.swift */,
+				110000212C12345600000002 /* OscilloscopeVisualizer.swift */,
+				110000222C12345600000002 /* FrequencyVortexVisualizer.swift */,
+				110000232C12345600000002 /* Shaders.metal */,
+				110000242C12345600000002 /* MetalParticleVisualizer.swift */,
 			);
 			name = Views;
 			path = Views;
@@ -160,6 +171,9 @@
 				110000042C12345600000001 /* VisualizerView.swift in Sources */,
 				110000052C12345600000001 /* SpectrumBarsVisualizer.swift in Sources */,
 				110000062C12345600000001 /* PermissionWarningView.swift in Sources */,
+				110000212C12345600000001 /* OscilloscopeVisualizer.swift in Sources */,
+				110000222C12345600000001 /* FrequencyVortexVisualizer.swift in Sources */,
+				110000242C12345600000001 /* MetalParticleVisualizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

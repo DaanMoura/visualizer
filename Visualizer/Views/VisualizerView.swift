@@ -44,6 +44,16 @@ struct VisualizerView: View {
                 toggleFullscreen()
                 return nil // Event is handled, suppress propagation
             }
+            
+            // Intercept Left and Right arrow keys to switch visualizer style
+            if event.keyCode == 123 { // Left Arrow
+                audioEngine.previousStyle()
+                return nil // Event is handled, suppress propagation and beep
+            } else if event.keyCode == 124 { // Right Arrow
+                audioEngine.nextStyle()
+                return nil // Event is handled, suppress propagation and beep
+            }
+            
             return event
         }
     }
@@ -140,14 +150,27 @@ struct RequestPermissionView: View {
 }
 
 struct ActiveVisualizerContainer: View {
+    @EnvironmentObject var audioEngine: AudioEngineManager
+
     var body: some View {
-        SpectrumBarsVisualizer()
-            .gesture(
-                TapGesture(count: 2)
-                    .onEnded {
-                        toggleFullscreen()
-                    }
-            )
+        Group {
+            switch audioEngine.currentStyle {
+            case .spectrumBars:
+                SpectrumBarsVisualizer()
+            case .oscilloscope:
+                OscilloscopeVisualizer()
+            case .frequencyVortex:
+                FrequencyVortexVisualizer()
+            case .metalParticles:
+                MetalParticleVisualizer()
+            }
+        }
+        .gesture(
+            TapGesture(count: 2)
+                .onEnded {
+                    toggleFullscreen()
+                }
+        )
     }
 
     private func toggleFullscreen() {
