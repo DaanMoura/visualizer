@@ -265,13 +265,82 @@ class AudioEngineManager: NSObject, ObservableObject {
     }
     
     private func startSystemAudioStream() {
-        // Will be implemented in Phase 2
-        print("startSystemAudioStream called")
+        guard screenCapturePermissionState == .granted else {
+            print("System audio capture failed: Screen capture permission not granted.")
+            return
+        }
+        guard !isSCStreamRunning else { return }
+        
+        print("Starting ScreenCaptureKit system audio stream...")
+        
+        Task {
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                guard let display = content.displays.first else {
+                    print("Error: No displays found for ScreenCaptureKit.")
+                    return
+                }
+                
+                let filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+                
+                let config = SCStreamConfiguration()
+                config.capturesAudio = true
+                config.excludesCurrentProcessAudio = true
+                
+                // Set tiny dimensions and frame rate since we only want audio
+                config.width = 2
+                config.height = 2
+                config.minimumFrameInterval = CMTime(value: 1, timescale: 10)
+                
+                let stream = SCStream(filter: filter, configuration: config, delegate: self)
+                
+                let audioQueue = DispatchQueue(label: "com.soundvisualizer.audioQueue", qos: .userInteractive)
+                try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: audioQueue)
+                
+                try await stream.startCapture()
+                
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.scStream = stream
+                    self.isSCStreamRunning = true
+                    self.isAudioActive = true
+                    self.activeDeviceName = "System Audio"
+                    print("ScreenCaptureKit started successfully.")
+                }
+            } catch {
+                print("Failed to start ScreenCaptureKit audio stream: \(error.localizedDescription)")
+                DispatchQueue.main.async { [weak self] in
+                    self?.isSCStreamRunning = false
+                    self?.isAudioActive = false
+                }
+            }
+        }
     }
     
     private func stopSystemAudioStream() {
-        // Will be implemented in Phase 2
-        print("stopSystemAudioStream called")
+        guard let stream = scStream, isSCStreamRunning else { return }
+        
+        print("Stopping ScreenCaptureKit system audio stream...")
+        
+        Task {
+            do {
+                try await stream.stopCapture()
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.scStream = nil
+                    self.isSCStreamRunning = false
+                    self.isAudioActive = false
+                    print("ScreenCaptureKit stream stopped.")
+                }
+            } catch {
+                print("Failed to stop ScreenCaptureKit stream cleanly: \(error.localizedDescription)")
+                DispatchQueue.main.async { [weak self] in
+                    self?.scStream = nil
+                    self?.isSCStreamRunning = false
+                    self?.isAudioActive = false
+                }
+            }
+        }
     }
     
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
@@ -604,6 +673,43 @@ class AudioEngineManager: NSObject, ObservableObject {
         let name = getActiveInputDeviceName()
         DispatchQueue.main.async { [weak self] in
             self?.activeDeviceName = name
+        }
+    }
+}
+
+extension AudioEngineManager: SCStreamOutput, SCStreamDelegate {
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+        guard type == .audio, sampleBuffer.isValid else { return }
+        
+        do {
+            try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
+                guard let formatDescription = sampleBuffer.formatDescription,
+                      let asbd = formatDescription.audioStreamBasicDescription else {
+                    return
+                }
+                
+                guard let format = AVAudioFormat(standardFormatWithSampleRate: asbd.mSampleRate,
+                                                 channels: asbd.mChannelsPerFrame) else {
+                    return
+                }
+                
+                guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: audioBufferList.unsafePointer) else {
+                    return
+                }
+                
+                self.processAudioBuffer(pcmBuffer)
+            }
+        } catch {
+            print("Error parsing audio sample buffer: \(error.localizedDescription)")
+        }
+    }
+    
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
+        print("ScreenCaptureKit stream stopped with error: \(error.localizedDescription)")
+        DispatchQueue.main.async { [weak self] in
+            self?.isSCStreamRunning = false
+            self?.isAudioActive = false
+            self?.scStream = nil
         }
     }
 }

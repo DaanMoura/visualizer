@@ -6,10 +6,10 @@
 
 ## 2. ScreenCaptureKit Audio Capture Path
 
-- [ ] 2.1 Retrieve the default display using `SCShareableContent` to configure `SCStream` (disabled video capture, enabled audio capture).
-- [ ] 2.2 Conform a helper or `AudioEngineManager` to `SCStreamOutput` and implement the `stream(_:didOutputSampleBuffer:of:)` callback.
-- [ ] 2.3 Add zero-copy conversion from `CMSampleBuffer` to `AVAudioPCMBuffer` using `withAudioBufferList` and route it to `processAudioBuffer`.
-- [ ] 2.4 Handle ScreenCaptureKit capture start, stop, and configuration lifecycle events safely.
+- [x] 2.1 Retrieve the default display using `SCShareableContent` to configure `SCStream` (disabled video capture, enabled audio capture).
+- [x] 2.2 Conform a helper or `AudioEngineManager` to `SCStreamOutput` and implement the `stream(_:didOutputSampleBuffer:of:)` callback.
+- [x] 2.3 Add zero-copy conversion from `CMSampleBuffer` to `AVAudioPCMBuffer` using `withAudioBufferList` and route it to `processAudioBuffer`.
+- [x] 2.4 Handle ScreenCaptureKit capture start, stop, and configuration lifecycle events safely.
 
 ## 3. Dynamic Permissions & Onboarding UI
 
