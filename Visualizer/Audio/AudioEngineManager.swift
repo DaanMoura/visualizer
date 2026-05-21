@@ -126,33 +126,12 @@ class AudioEngineManager: NSObject, ObservableObject {
             return
         }
         
-        // Fallback for macOS 14.4+ "System Audio Recording Only" permission.
-        // CGPreflightScreenCaptureAccess() returns false if only system audio capture is permitted.
-        // Attempting to query shareable content acts as an async permission preflight check.
-        Task {
-            do {
-                _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    print("System audio capture permission verified via SCShareableContent fallback.")
-                    self.screenCapturePermissionState = .granted
-                    if self.captureSource == .systemAudio {
-                        self.startAudioStream()
-                    }
-                }
-            } catch {
-                print("SCShareableContent query failed with error: \(error)")
-                print("Localized Description: \(error.localizedDescription)")
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")
-                    if hasRequested {
-                        self.screenCapturePermissionState = .denied
-                    } else {
-                        self.screenCapturePermissionState = .undetermined
-                    }
-                }
-            }
+        let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")
+        if hasRequested {
+            // Optimistically assume granted, let the stream start attempt verify it.
+            screenCapturePermissionState = .granted
+        } else {
+            screenCapturePermissionState = .undetermined
         }
     }
     
