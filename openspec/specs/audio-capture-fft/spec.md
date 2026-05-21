@@ -4,7 +4,7 @@
 TBD - created by archiving change initial-app. Update Purpose after archive.
 ## Requirements
 ### Requirement: Real-Time Audio Buffer Capture
-The system SHALL tap the selected audio source (either the active input device or the system-wide internal audio via `ScreenCaptureKit`) at a standard sample rate, converting captured sound into real-time PCM buffers. If no source has been explicitly selected, the system SHALL default to the system default input device.
+The system SHALL tap the selected audio source (either the active input device or the system-wide internal audio via `ScreenCaptureKit`) at a standard sample rate, converting captured sound into real-time PCM buffers. If no source has been explicitly selected or persisted, the system SHALL default to the `System Audio` (internal driverless) capture source at startup to preserve system-wide speaker audio quality. When capturing from `System Audio` or when capture is stopped, the system SHALL completely release and deallocate `AVAudioEngine` resources to prevent triggering unwanted microphone sessions.
 
 #### Scenario: Audio Capture Active
 - **WHEN** the application is active and permissions are granted
@@ -52,4 +52,11 @@ The application SHALL support capturing system-wide internal audio natively usin
 #### Scenario: System Audio Capture
 - **WHEN** the system audio source option is selected and either Screen & System Audio Recording or System Audio Recording Only permission is granted
 - **THEN** the system starts an `SCStream` capturing internal speaker output, converts `CMSampleBuffer` frames into standard PCM buffers, and routes them to the FFT processor.
+
+### Requirement: Audio Capture State Persistence
+The system SHALL persist the user's selected capture source across application launches.
+
+#### Scenario: Launch with Persisted Source
+- **WHEN** the application launches and a previously selected capture source is saved in user preferences
+- **THEN** the system automatically restores that capture source and initializes the corresponding capture stream.
 
