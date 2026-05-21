@@ -4,11 +4,11 @@
 TBD - created by archiving change initial-app. Update Purpose after archive.
 ## Requirements
 ### Requirement: Real-Time Audio Buffer Capture
-The system SHALL tap the selected audio input device using `AVAudioEngine` at a standard sample rate, converting captured sound into real-time PCM buffers. If no device has been explicitly selected, the system SHALL fall back to the default macOS audio input.
+The system SHALL tap the selected audio source (either the active input device or the system-wide internal audio via `ScreenCaptureKit`) at a standard sample rate, converting captured sound into real-time PCM buffers. If no source has been explicitly selected, the system SHALL default to the system default input device.
 
 #### Scenario: Audio Capture Active
 - **WHEN** the application is active and permissions are granted
-- **THEN** the system installs a tap on the selected (or default) input node and streams audio buffer data.
+- **THEN** the system installs a tap on the selected (or default) capture path (AVAudioEngine input node or ScreenCaptureKit stream) and streams audio buffer data.
 
 #### Scenario: Selected Device Unavailable
 - **WHEN** the previously selected input device is removed, becomes unavailable, or reports an incompatible format
@@ -45,4 +45,11 @@ The system SHALL scale raw frequency amplitudes logarithmically using standard d
 #### Scenario: Sensitive Amplitude Scaling
 - **WHEN** raw frequency amplitudes are calculated from input audio
 - **THEN** the system normalizes them using the decibel-floor mapping to prevent low-amplitude digital streams from appearing frozen or static at 0% height.
+
+### Requirement: Driverless System Audio Capture
+The application SHALL support capturing system-wide internal audio natively using macOS `ScreenCaptureKit` without requiring virtual audio drivers or external dependencies.
+
+#### Scenario: System Audio Capture
+- **WHEN** the system audio source option is selected and screen recording permission is granted
+- **THEN** the system starts an `SCStream` capturing internal speaker output, converts `CMSampleBuffer` frames into standard PCM buffers, and routes them to the FFT processor.
 
