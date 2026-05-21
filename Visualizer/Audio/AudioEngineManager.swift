@@ -5,6 +5,8 @@ import AudioToolbox
 import Accelerate
 @preconcurrency import ScreenCaptureKit
 import CoreGraphics
+import AppKit
+
 
 class AudioEngineManager: NSObject, ObservableObject {
     enum PermissionState {
@@ -78,6 +80,7 @@ class AudioEngineManager: NSObject, ObservableObject {
     }
     
     deinit {
+        NotificationCenter.default.removeObserver(self)
         stopAudioStream()
         removeHardwareDeviceListener()
     }
@@ -439,7 +442,20 @@ class AudioEngineManager: NSObject, ObservableObject {
             name: Notification.Name.AVAudioEngineConfigurationChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
         addHardwareDeviceListener()
+    }
+    
+    @objc private func handleAppDidBecomeActive() {
+        print("Application became active, checking and updating audio permissions...")
+        DispatchQueue.main.async { [weak self] in
+            self?.checkPermission()
+        }
     }
     
     @objc private func handleRouteChange() {
