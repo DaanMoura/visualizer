@@ -1,8 +1,8 @@
 ## 1. Core Integration & Capture Source State
 
-- [ ] 1.1 Add a `CaptureSource` enum representing `.microphone` and `.systemAudio` to `AudioEngineManager.swift`.
-- [ ] 1.2 Publish the current `CaptureSource` and implement a thread-safe `switchCaptureSource(_:)` method.
-- [ ] 1.3 Update stream startup and shutdown paths to handle switching between source types cleanly without crashing.
+- [x] 1.1 Add a `CaptureSource` enum representing `.microphone` and `.systemAudio` to `AudioEngineManager.swift`.
+- [x] 1.2 Publish the current `CaptureSource` and implement a thread-safe `switchCaptureSource(_:)` method.
+- [x] 1.3 Update stream startup and shutdown paths to handle switching between source types cleanly without crashing.
 
 ## 2. ScreenCaptureKit Audio Capture Path
 

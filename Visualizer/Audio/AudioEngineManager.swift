@@ -3,12 +3,21 @@ import AVFoundation
 import CoreAudio
 import AudioToolbox
 import Accelerate
+import ScreenCaptureKit
+import CoreGraphics
 
-class AudioEngineManager: ObservableObject {
+class AudioEngineManager: NSObject, ObservableObject {
     enum PermissionState {
         case undetermined
         case granted
         case denied
+    }
+
+    enum CaptureSource: String, CaseIterable, Identifiable {
+        case microphone = "Microphone"
+        case systemAudio = "System Audio"
+        
+        var id: String { rawValue }
     }
 
     struct InputDevice: Identifiable, Equatable {
@@ -21,6 +30,8 @@ class AudioEngineManager: ObservableObject {
     }
     
     @Published var permissionState: PermissionState = .undetermined
+    @Published var screenCapturePermissionState: PermissionState = .undetermined
+    @Published var captureSource: CaptureSource = .microphone
     @Published var isAudioActive = false
     
     @Published var activeDeviceName: String = "Default Input"
@@ -41,12 +52,17 @@ class AudioEngineManager: ObservableObject {
     )
     private var hardwareDevicesListener: AudioObjectPropertyListenerBlock?
     
+    // ScreenCaptureKit properties
+    private var scStream: SCStream?
+    private var isSCStreamRunning = false
+    
     // Smooth decay values
     private var peakHoldFrames: [Int] = Array(repeating: 0, count: 32)
     
     private let fftBinCount = 32
     
-    init() {
+    override init() {
+        super.init()
         refreshInputDevices()
         checkPermission()
         setupNotifications()
@@ -61,7 +77,6 @@ class AudioEngineManager: ObservableObject {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
             permissionState = .granted
-            startAudioStream()
         case .denied, .restricted:
             permissionState = .denied
         case .notDetermined:
@@ -69,17 +84,73 @@ class AudioEngineManager: ObservableObject {
         @unknown default:
             permissionState = .undetermined
         }
+        
+        checkScreenCapturePermission()
+        
+        if hasPermission(for: captureSource) {
+            startAudioStream()
+        }
     }
     
     func requestPermission() {
         AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
             DispatchQueue.main.async {
+                guard let self = self else { return }
                 if granted {
-                    self?.permissionState = .granted
-                    self?.startAudioStream()
+                    self.permissionState = .granted
+                    if self.captureSource == .microphone {
+                        self.startAudioStream()
+                    }
                 } else {
-                    self?.permissionState = .denied
+                    self.permissionState = .denied
                 }
+            }
+        }
+    }
+    
+    func checkScreenCapturePermission() {
+        if CGPreflightScreenCaptureAccess() {
+            screenCapturePermissionState = .granted
+        } else {
+            screenCapturePermissionState = .denied
+        }
+    }
+    
+    func requestScreenCapturePermission() {
+        _ = CGRequestScreenCaptureAccess()
+        
+        // Dynamic recheck after triggering the request
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+            self.checkScreenCapturePermission()
+            if self.screenCapturePermissionState == .granted && self.captureSource == .systemAudio {
+                self.startAudioStream()
+            }
+        }
+    }
+    
+    func hasPermission(for source: CaptureSource) -> Bool {
+        switch source {
+        case .microphone:
+            return permissionState == .granted
+        case .systemAudio:
+            return screenCapturePermissionState == .granted
+        }
+    }
+    
+    func switchCaptureSource(_ source: CaptureSource) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard self.captureSource != source else { return }
+            
+            print("Switching capture source to \(source.rawValue)...")
+            self.stopAudioStream()
+            self.captureSource = source
+            
+            self.checkPermission()
+            
+            if self.hasPermission(for: source) {
+                self.startAudioStream()
             }
         }
     }
@@ -89,7 +160,14 @@ class AudioEngineManager: ObservableObject {
 
         let nextDevice = availableInputDevices.first { $0.id == device.id } ?? defaultInputDevice
         selectedInputDevice = nextDevice
-        updateActiveDevice()
+        
+        // Auto switch back to microphone if they select a device
+        if captureSource != .microphone {
+            captureSource = .microphone
+            checkPermission()
+        } else {
+            updateActiveDevice()
+        }
 
         guard permissionState == .granted else { return }
 
@@ -102,6 +180,22 @@ class AudioEngineManager: ObservableObject {
     }
     
     func startAudioStream() {
+        print("Starting stream for source: \(captureSource.rawValue)...")
+        switch captureSource {
+        case .microphone:
+            startMicrophoneStream()
+        case .systemAudio:
+            startSystemAudioStream()
+        }
+    }
+    
+    func stopAudioStream() {
+        print("Stopping all audio streams...")
+        stopMicrophoneStream()
+        stopSystemAudioStream()
+    }
+    
+    private func startMicrophoneStream() {
         guard permissionState == .granted else { return }
         guard !isEngineRunning else { return }
         
@@ -160,7 +254,7 @@ class AudioEngineManager: ObservableObject {
         }
     }
     
-    func stopAudioStream() {
+    private func stopMicrophoneStream() {
         guard isEngineRunning else { return }
         
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -168,6 +262,16 @@ class AudioEngineManager: ObservableObject {
         isEngineRunning = false
         isAudioActive = false
         print("AVAudioEngine stopped.")
+    }
+    
+    private func startSystemAudioStream() {
+        // Will be implemented in Phase 2
+        print("startSystemAudioStream called")
+    }
+    
+    private func stopSystemAudioStream() {
+        // Will be implemented in Phase 2
+        print("stopSystemAudioStream called")
     }
     
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
