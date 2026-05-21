@@ -33,7 +33,7 @@ class AudioEngineManager: NSObject, ObservableObject {
     
     @Published var permissionState: PermissionState = .undetermined
     @Published var screenCapturePermissionState: PermissionState = .undetermined
-    @Published var captureSource: CaptureSource = .systemAudio
+    @Published var captureSource: CaptureSource = .microphone
     @Published var isAudioActive = false
     
     @Published var activeDeviceName: String = "Default Input"
@@ -66,12 +66,12 @@ class AudioEngineManager: NSObject, ObservableObject {
     override init() {
         super.init()
         
-        // Restore persisted capture source, defaulting to .systemAudio
+        // Restore persisted capture source, defaulting to .microphone
         if let savedSourceRaw = UserDefaults.standard.string(forKey: "selectedCaptureSource"),
            let savedSource = CaptureSource(rawValue: savedSourceRaw) {
             self.captureSource = savedSource
         } else {
-            self.captureSource = .systemAudio
+            self.captureSource = .microphone
         }
         
         refreshInputDevices()
@@ -141,6 +141,8 @@ class AudioEngineManager: NSObject, ObservableObject {
                     }
                 }
             } catch {
+                print("SCShareableContent query failed with error: \(error)")
+                print("Localized Description: \(error.localizedDescription)")
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
                     let hasRequested = UserDefaults.standard.bool(forKey: "hasRequestedScreenCapture")

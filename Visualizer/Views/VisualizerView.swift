@@ -118,6 +118,16 @@ struct RequestPermissionView: View {
             }
             .buttonStyle(.plain)
 
+            Button(action: {
+                audioEngine.switchCaptureSource(source == .microphone ? .systemAudio : .microphone)
+            }) {
+                Text(source == .microphone ? "Switch to System Audio" : "Switch to Microphone Input")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.cyan)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+
             Text(source == .microphone 
                  ? "Tip: Install a loopback driver like BlackHole to visualize pure internal computer sound."
                  : "Tip: ScreenCaptureKit requires Screen Recording permission to tap speaker output. No video is recorded or stored.")

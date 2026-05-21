@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PermissionWarningView: View {
+    @EnvironmentObject var audioEngine: AudioEngineManager
     let source: AudioEngineManager.CaptureSource
     
     var body: some View {
@@ -71,6 +72,16 @@ struct PermissionWarningView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(source == .microphone ? Color.orange : Color.purple)
                     )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: {
+                audioEngine.switchCaptureSource(source == .microphone ? .systemAudio : .microphone)
+            }) {
+                Text(source == .microphone ? "Switch to System Audio" : "Switch to Microphone Input")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.cyan)
+                    .underline()
             }
             .buttonStyle(.plain)
         }
