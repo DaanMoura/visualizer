@@ -20,13 +20,13 @@
 
 ## 4. UI Menu Source Selection
 
-- [ ] 4.1 Update `VisualizerApp.swift` menus to include a new source picker segment ("Microphone" vs "System Audio").
-- [ ] 4.2 Reflect the selected active source state dynamically in the menu bar with checked markers.
-- [ ] 4.3 Ensure switching modes restarts capture paths instantly and updates the UI state smoothly.
+- [x] 4.1 Update `VisualizerApp.swift` menus to include a new source picker segment ("Microphone" vs "System Audio").
+- [x] 4.2 Reflect the selected active source state dynamically in the menu bar with checked markers.
+- [x] 4.3 Ensure switching modes restarts capture paths instantly and updates the UI state smoothly.
 
 ## 5. Verification & Testing
 
-- [ ] 5.1 Build the application and ensure zero compiler warnings.
-- [ ] 5.2 Test "Microphone" mode capture with standard system microphone or virtual device (BlackHole) and verify FFT response.
-- [ ] 5.3 Test "System Audio" mode capture with internal audio (e.g. playing audio in Safari/Music) and verify driverless FFT response.
-- [ ] 5.4 Verify the permission error screens trigger correctly when disabling microphone or screen recording permission in macOS Settings.
+- [x] 5.1 Build the application and ensure zero compiler warnings.
+- [x] 5.2 Test "Microphone" mode capture with standard system microphone or virtual device (BlackHole) and verify FFT response.
+- [x] 5.3 Test "System Audio" mode capture with internal audio (e.g. playing audio in Safari/Music) and verify driverless FFT response.
+- [x] 5.4 Verify the permission error screens trigger correctly when disabling microphone or screen recording permission in macOS Settings.

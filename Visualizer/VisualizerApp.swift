@@ -23,9 +23,24 @@ struct AudioInputCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Audio Input") {
+            Button {
+                audioEngine.switchCaptureSource(.microphone)
+            } label: {
+                Label("Microphone / Input Device", systemImage: audioEngine.captureSource == .microphone ? "checkmark" : "circle")
+            }
+
+            Button {
+                audioEngine.switchCaptureSource(.systemAudio)
+            } label: {
+                Label("System Audio (Internal)", systemImage: audioEngine.captureSource == .systemAudio ? "checkmark" : "circle")
+            }
+
+            Divider()
+
             Button("Refresh Inputs") {
                 audioEngine.refreshInputDevices()
             }
+            .disabled(audioEngine.captureSource != .microphone)
 
             Divider()
 
@@ -38,12 +53,13 @@ struct AudioInputCommands: Commands {
                     } label: {
                         Label(device.name, systemImage: selectedSystemImage(for: device))
                     }
+                    .disabled(audioEngine.captureSource != .microphone)
                 }
             }
         }
     }
 
     private func selectedSystemImage(for device: AudioEngineManager.InputDevice) -> String {
-        audioEngine.selectedInputDevice?.id == device.id ? "checkmark" : "circle"
+        (audioEngine.captureSource == .microphone && audioEngine.selectedInputDevice?.id == device.id) ? "checkmark" : "circle"
     }
 }

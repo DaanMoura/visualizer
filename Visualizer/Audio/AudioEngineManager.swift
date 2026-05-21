@@ -3,7 +3,7 @@ import AVFoundation
 import CoreAudio
 import AudioToolbox
 import Accelerate
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 import CoreGraphics
 
 class AudioEngineManager: NSObject, ObservableObject {
@@ -279,7 +279,7 @@ class AudioEngineManager: NSObject, ObservableObject {
         
         print("Starting ScreenCaptureKit system audio stream...")
         
-        Task {
+        Task { @MainActor in
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 guard let display = content.displays.first else {
@@ -305,20 +305,15 @@ class AudioEngineManager: NSObject, ObservableObject {
                 
                 try await stream.startCapture()
                 
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.scStream = stream
-                    self.isSCStreamRunning = true
-                    self.isAudioActive = true
-                    self.activeDeviceName = "System Audio"
-                    print("ScreenCaptureKit started successfully.")
-                }
+                self.scStream = stream
+                self.isSCStreamRunning = true
+                self.isAudioActive = true
+                self.activeDeviceName = "System Audio"
+                print("ScreenCaptureKit started successfully.")
             } catch {
                 print("Failed to start ScreenCaptureKit audio stream: \(error.localizedDescription)")
-                DispatchQueue.main.async { [weak self] in
-                    self?.isSCStreamRunning = false
-                    self?.isAudioActive = false
-                }
+                self.isSCStreamRunning = false
+                self.isAudioActive = false
             }
         }
     }
@@ -328,23 +323,18 @@ class AudioEngineManager: NSObject, ObservableObject {
         
         print("Stopping ScreenCaptureKit system audio stream...")
         
-        Task {
+        Task { @MainActor in
             do {
                 try await stream.stopCapture()
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.scStream = nil
-                    self.isSCStreamRunning = false
-                    self.isAudioActive = false
-                    print("ScreenCaptureKit stream stopped.")
-                }
+                self.scStream = nil
+                self.isSCStreamRunning = false
+                self.isAudioActive = false
+                print("ScreenCaptureKit stream stopped.")
             } catch {
                 print("Failed to stop ScreenCaptureKit stream cleanly: \(error.localizedDescription)")
-                DispatchQueue.main.async { [weak self] in
-                    self?.scStream = nil
-                    self?.isSCStreamRunning = false
-                    self?.isAudioActive = false
-                }
+                self.scStream = nil
+                self.isSCStreamRunning = false
+                self.isAudioActive = false
             }
         }
     }
