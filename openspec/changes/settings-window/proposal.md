@@ -8,16 +8,15 @@ This change introduces a native, secondary utility Settings window to manage con
 
 - **Auxiliary Config Window**: A native secondary utility window (`SettingsView`/`NSWindow`) to configure application parameters.
 - **Audio Capture Selector Duplication**: Retain the active audio input source toggle (Microphone vs. System Audio) and physical input device selector list in the system menu bar, while also adding them as dual-controls inside the new settings panel, ensuring real-time state synchronization between both interfaces.
-- **Credential Fields Persistence**: Persistent text inputs in the settings panel to register and secure credentials for OpenRouter (API keys) and local Llama endpoints, ensuring Phase 3 is pre-configured.
 - **Window Triggers**: Registering standard macOS triggers to summon the settings panel: the standard `⌘,` (Command + Comma) keyboard shortcut and an application menu item.
 
 ## Capabilities
 
 ### New Capabilities
-- `settings-shell`: Native secondary configuration window containing categorized options for Audio settings, API credentials, and the future custom shader library.
+- `settings-shell`: Native secondary configuration window containing categorized options for Audio settings and the future custom shader library placeholder.
 
 ### Modified Capabilities
-- `visualizer-core`: Update startup and menu requirements to support secondary window instantiation and control migration.
+- `visualizer-core`: Update startup and menu requirements to support secondary window instantiation and control duplication.
 
 ## Impact
 

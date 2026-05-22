@@ -21,6 +21,7 @@
 - [ ] 4.1 Expand the 'Shader Library' tab in `SettingsView.swift` to add a prompt text input area, active model selection dropdown, and "Generate with AI" button
 - [ ] 4.2 Integrate a visual generation loader overlay and dynamic progress logger inside the settings panel
 - [ ] 4.3 Lock inputs and editing during active generation runs to prevent state conflicts
+- [ ] 4.4 Add the 'API Credentials' sidebar item to the Settings window navigation list, hosting a native form with persistent `@AppStorage` text inputs for OpenRouter API keys and custom local Llama endpoints
 
 ## 5. Verification & Testing
 

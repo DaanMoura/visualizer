@@ -7,6 +7,7 @@ This change introduces an AI-powered visualizer generation subsystem that levera
 ## What Changes
 
 - **AI Prompt Console**: Add a natural-language prompt input field and a "Generate with AI" button within the 'Shader Library' tab in the Settings window.
+- **API Credentials Persistence**: Introduce the 'API Credentials' vertical sidebar item in the Settings window, complete with persistent text inputs secured via `@AppStorage` for OpenRouter API keys and custom local Llama endpoints.
 - **Dual API Client Integrations**:
   - **OpenRouter Client**: A robust API client that connects securely to the OpenRouter endpoint utilizing `@AppStorage` API credentials.
   - **Local Llama (Ollama) Client**: A lightweight, offline-ready client that connects to local host endpoints (`http://localhost:11434/api/generate` or `/api/chat`).
@@ -21,9 +22,9 @@ This change introduces an AI-powered visualizer generation subsystem that levera
 - `ai-visualization-generator`: Multi-client API connectors, structured prompt packaging (injecting MSL templates and `AudioDataUniforms` structures), loading state machines, and recursive self-healing compilers.
 
 ### Modified Capabilities
-- `settings-shell`: Expand the Shader Library tab to include prompt input controls, model selection toggles, generator triggers, and status panels alongside the code editor.
+- `settings-shell`: Expand the Settings window sidebar to add the new 'API Credentials' navigation item, and expand the 'Shader Library' tab to include prompt input controls, model selection toggles, generator triggers, and status panels alongside the code editor.
 
 ## Impact
 
 - **AudioEngineManager**: Add state parameters tracking the active prompt text, generation progress logs, and connection status.
-- **SettingsView**: Integrate prompt inputs, model selectors, loading wheels, and connection checkers.
+- **SettingsView**: Integrate the new API Credentials view, credentials text inputs, model selectors, prompt forms, and dynamic loading consoles.
