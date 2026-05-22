@@ -1,7 +1,7 @@
 ## 1. Settings Window Scaffolding
 
 - [ ] 1.1 Declare the secondarySettings window scene in `VisualizerApp.swift` using `Window("Settings", id: "settings")`
-- [ ] 1.2 Create the base `SettingsView.swift` containing a modular, modern tab bar with panels for 'Audio', 'API Credentials', and 'Shader Library'
+- [ ] 1.2 Create the base `SettingsView.swift` using a native `NavigationSplitView` sidebar navigation with standard macOS Sequoia/Tahoe platform elements for 'Audio', 'API Credentials', and 'Shader Library' panels
 - [ ] 1.3 Map standard `⌘,` (Command + Comma) keyboard triggers and application menu command items to open the Settings window natively via SwiftUI's `openWindow` environment action
 
 ## 2. Control Integration & Persistence

@@ -35,6 +35,10 @@ This change covers the structural scaffolding of the utility Settings window and
 - **Decision**: Implement text fields for OpenRouter API keys and Local Llama server endpoints bound directly to `UserDefaults` using SwiftUI's `@AppStorage`.
 - **Rationale**: Provides instant state synchronization, standard visual security, and ensures Phase 3 has a clean foundation to read keys immediately.
 
+### 4. Native Sidebar Layout & Tahoe Platform HIG
+- **Decision**: Structure the Settings interface using a native SwiftUI `NavigationSplitView` (vertical sidebar on the left, scrollable content form on the right) and employ default platform styling for all controls (`Picker`, `TextField`, `Form`, `Section`, and `Toggle`).
+- **Rationale**: Aligns perfectly with standard modern macOS System Settings (Sequoia/Tahoe HIG). Utilizing standard platform views ensures automatic dark/light mode compatibility, native focus indicators, robust keyboard accessibility, and standard window scaling.
+
 ## Risks / Trade-offs
 
 - **[Risk] Audio stream stuttering during input swaps in the settings pane**
