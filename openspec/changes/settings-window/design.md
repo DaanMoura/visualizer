@@ -27,9 +27,9 @@ This change covers the structural scaffolding of the utility Settings window and
 - **Triggers**: Linked natively to the standard `⌘,` keyboard shortcut and the "Settings..." command button in the application menu.
 - **Behavior**: Because the window scene uses a static ID (`"settings"`), macOS guarantees that subsequent triggers will bring the existing Settings window to the foreground instead of spawning redundant copies.
 
-### 2. Audio Control Panel Migration
-- **Decision**: Relocate the audio input source toggle and input device picker from the system menu bar to a dedicated 'Audio' settings tab.
-- **Rationale**: Declutters the global application menu bar, keeping configuration actions logically grouped in a single settings pane.
+### 2. Dual Audio Control Panels
+- **Decision**: Retain the audio input source toggle and input device picker in the system menu bar, while also adding matching selectors in the dedicated 'Audio' settings tab of the Settings window.
+- **Rationale**: Provides the best of both worlds: quick access to audio inputs from the global application menu bar, and a dedicated native settings panel for deeper configuration. Both panels bind directly to the shared `AudioEngineManager` instance, keeping state perfectly synced in real-time.
 
 ### 3. API Credentials Layout
 - **Decision**: Implement text fields for OpenRouter API keys and Local Llama server endpoints bound directly to `UserDefaults` using SwiftUI's `@AppStorage`.
