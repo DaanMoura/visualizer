@@ -36,3 +36,10 @@ The application SHALL dynamically verify required permissions based on the activ
 - **WHEN** an input-device source is selected and the microphone permission is denied or restricted
 - **THEN** the main window displays a helpful explanation screen instead of the visualizer, prompting the user to enable permissions in macOS Settings.
 
+### Requirement: Active Visualizer Rendering Host
+The visualization view SHALL host the currently active visualizer style, supplying it with real-time frequency-domain and/or time-domain PCM data. Swapping the active style SHALL instantly update the rendering view to the new style.
+
+#### Scenario: Display Active Visualizer Style
+- **WHEN** a visualizer style is selected as active
+- **THEN** the visualization surface hosts and renders that specific style using real-time audio data.
+
