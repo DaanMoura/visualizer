@@ -8,29 +8,25 @@ This project is built from the ground up to be lightweight, high-performance, an
 
 ### Key Features
 - **Pure Visualizer:** No music players, playlists, or complex libraries—just gorgeous real-time visualizers.
-- **Microphone / System Audio Input:** Captures sound input in real-time and analyzes frequencies using AVFoundation / Accelerate framework (FFT).
-- **Smooth Windowing:** Resizable window with instant visual adaptation and seamless toggle to Native Fullscreen mode.
-- **Classic Styles:** Cycle through multiple visualizer styles (e.g., retro spectrum bars, wave oscilloscopes, frequency fire, and psychedelic lines).
-- **Extreme Performance:** Built using Swift with Metal or highly optimized Core Graphics rendering to ensure high refresh rates and minimal CPU/GPU overhead.
+- **Microphone & System Audio Capture:** Accesses physical microphone inputs or internal system audio (loopback) in real-time with automatic permission state handling.
+- **Dynamic Device Selection:** Switch capture sources (Microphone vs. System Audio) or pick specific microphone devices directly from the macOS menu bar.
+- **Digital Signal Processing (DSP):** Real-time Fast Fourier Transform (FFT) analysis using Apple's Accelerate framework (`vDSP`) with logarithmic/exponential smoothing and peak decay for fluid visual drops.
+- **Aesthetic Visualizer Styles:** Cycle through multiple stunning visualizer styles:
+  - **Spectrum Bars:** Retro-modern glowing vertical bars with falling peak indicators and modern neon gradient fills.
+  - **Oscilloscope Wave:** A smooth, neon-glowing sinus wave representing the time-domain waveform.
+  - **Frequency Vortex:** Mesmerizing radial frequency bands that scale and rotate dynamically from the center.
+  - **Neon Particle Vortex (Metal):** High-performance physics-based particle rendering powered by Apple's Metal API and custom MSL shaders at 60+ FPS.
+- **Fluid macOS Window Shell:** Resizable window with instant visual adaptation, custom loading/permission screens, and robust audio-tap retention across sizing events.
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Platform:** macOS 13+
+- **Platform:** macOS 13+ (Ventura or newer)
 - **Language:** Swift 5.9+
-- **UI Framework:** SwiftUI or AppKit (optimized for low-latency windowing)
-- **Audio Processing:** AVFoundation, CoreAudio, and the Accelerate framework (for FFT processing)
-- **Rendering:** Metal or Core Graphics / SpriteKit for fluid high-framerate rendering
-
----
-
-## 📂 Project Structure
-
-- `/Visualizer` - Core Swift Xcode Project / Source files
-  - `/Visualizer/Audio` - Audio capture and FFT analysis engine (`AudioEngineManager.swift`, `FFTProcessor.swift`)
-  - `/Visualizer/Views` - SwiftUI views (`VisualizerView.swift`, `SpectrumBarsVisualizer.swift`, `PermissionWarningView.swift`)
-- `/openspec` - Design, proposals, and specifications for the visualizer features
+- **UI Framework:** SwiftUI & AppKit integration (optimized for low-latency windowing)
+- **Audio Processing:** `AVFoundation`, `CoreAudio`, `ScreenCaptureKit`, and `Accelerate` (vDSP)
+- **Rendering Engine:** `Metal` (using MetalKit and MSL shaders) and optimized SwiftUI `Canvas` rendering
 
 ---
 
@@ -87,6 +83,9 @@ By default, the app captures audio from your Mac's default input device (physica
 ---
 
 ## 🎛 Controls
-- **F / Double Click:** Toggle Native Fullscreen Mode
-- **Esc:** Exit fullscreen mode
 
+- **Double-Click / `F`:** Toggle Native Fullscreen Mode
+- **`Esc`:** Exit Fullscreen Mode
+- **Left / Right Arrow Keys:** Switch to the next/previous visualizer style instantly (with suppressed system alert beeps)
+- **Command Shortcuts (⌘1 - ⌘4):** Jump directly to specific visualizer styles from the menu bar
+- **Audio Input Menu:** Dynamic capture source and input device selection
